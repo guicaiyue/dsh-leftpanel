@@ -1,0 +1,9 @@
+# Normalize line endings: this package is published to npm and installed on
+# every platform, so the stored bytes should not depend on who committed last.
+* text=auto eol=lf
+
+# Binary assets keep their bytes.
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary

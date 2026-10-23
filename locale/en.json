@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Left menu",
+    "description": "List every item that can appear in the left sidebar and hide or show each panel entry. Hiding affects the entry only — the feature itself stays registered and reachable."
+  }
+}
