@@ -1,4 +1,5 @@
 node_modules/
+.market/
 .verify/
 .research/
 *.log
