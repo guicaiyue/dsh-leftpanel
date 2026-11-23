@@ -47,11 +47,20 @@ docker compose restart dsh          # 改 client/index 后都要重启
 | arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz` |
 | NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | 同上（URL） |
 
-两台都能直连 GitHub，不用中转。NAS 上第一次 `pnpm add <url>` 曾报过一次
-`TimeoutError: The operation was aborted due to timeout`，但同机 `curl`（302 / 0.46s）、
-`node fetch`（200 / 0.8s）、干净目录里 `pnpm add <url>`（5.3s）、以及重跑同一条 dsh 命令
-（2.1s）全部成功——**那是 pnpm 的一次瞬时超时，不是网络不通**。判定连通性用 curl 或
-node fetch，别拿一次 pnpm 失败当结论。
+NAS 访问 GitHub **走 mihomo 代理**（`github.com:443` 匹配 `🚀 节点选择`），不是直连。
+NAS 上第一次 `pnpm add <url>` 报过 `TimeoutError: The operation was aborted due to timeout`，
+但同机 `curl`（302 / 0.46s）、`node fetch`（200 / 0.8s）、干净目录 `pnpm add`（5.3s）、
+重跑同一条 dsh 命令（2.1s）全部成功。
+
+**根因是代理节点瞬时掉线**，不是网络不通，也不是 pnpm 的毛病：当天 `journalctl | grep -c
+"failed to create session"` 有 182 次，同时 `mihomo` 日志里能看到
+`dial 🚀 节点选择 … cdn.jsdelivr.net:443 error: failed to create session: context deadline exceeded`。
+节点池健康时是 32/35 可用，所以这种失败是间歇性的，重试就好。
+
+判定顺序（别跳步）：`/dev/tcp/github.com/443` 探 TCP → `node fetch` 或 `curl -sI` 看
+HTTP 状态 → `curl -s -H "Authorization: Bearer <secret>" http://127.0.0.1:9090/proxies`
+看节点健康（secret 在 `/root/.clashctl/data/runtime.yaml`）→ `journalctl | grep -c
+'failed to create session'` 看掉线次数。一次 pnpm 失败不构成结论。
 
 装完必须重启：宿主 `systemctl --user restart dsh`，NAS `systemctl restart dsh`。
 验证不看浏览器（无头 Chrome 处理不了 303 + HttpOnly cookie），直接问接口：
