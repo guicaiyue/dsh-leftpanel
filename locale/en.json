@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Left menu",
-    "description": "List every item that can appear in the left sidebar and hide or show each panel entry. Hiding affects the entry only — the feature itself stays registered and reachable."
+    "description": "Every item that can appear in the left sidebar, each with its own hide/show switch. \"Collection mode\" folds all panel entries into one row with a two-column card on hover; once an entry is chosen, clicking the row opens it. On by default."
   }
 }

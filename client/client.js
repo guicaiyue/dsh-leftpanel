@@ -55,6 +55,18 @@ window.__ModuleLoader__.load({
 		const MIRROR_KEY = 'dsh-leftpanel:hidden'
 		/** Attribute this plugin sets on a sidebar row it is hiding. */
 		const HIDE_ATTR = 'data-dsh-leftpanel-hidden'
+		/** Attribute marking the synthetic "集合" row this plugin injects. */
+		const COLLECTION_ATTR = 'data-dsh-leftpanel-collection'
+		/** Attribute marking the floating card that row opens. */
+		const CARD_ATTR = 'data-dsh-leftpanel-card'
+		/** Boot mirror of the collection setting, next to the hidden-set mirror. */
+		const COLLECTION_MIRROR_KEY = 'dsh-leftpanel:collection'
+		/** Card geometry, measured against the live sidebar (see docs/proto). */
+		const CARD_WIDTH = 448
+		/** Milliseconds the card lingers after the pointer leaves row and card. */
+		const CARD_CLOSE_DELAY = 160
+		/** Gap between the sidebar's right edge and the card's left edge. */
+		const CARD_GAP = 8
 
 		// ── dictionaries ────────────────────────────────────────────────────
 		const zh = {
@@ -81,6 +93,19 @@ window.__ModuleLoader__.load({
 			fixedSettings: '设置',
 			fixedFooter: '底部附加控件',
 			fixedBrand: '品牌标记',
+			collectionTitle: '集合',
+			collectionHint: '把面板入口收进一行；悬浮展开双列卡片，点击直达所选页面。默认开启。',
+			collectionName: '集合模式',
+			collectionSub: '左栏只留一行「集合」，面板入口收进右侧双列卡片',
+			collectionOn: '已开启',
+			collectionOff: '已关闭',
+			collectionCurrent: '斜杠后显示的入口',
+			collectionNone: '尚未选择',
+			collectionClear: '清除选择',
+			collectionNav: '集合',
+			collectionKeysMove: '↑↓ 选择 · ←→ 换列',
+			collectionKeysOpen: 'Enter 打开 · Esc 关闭',
+			collectionEmpty: '没有可收进集合的面板入口。',
 			helpTitle: '说明',
 			helpBody: '本插件只改变左侧菜单的可见性：被隐藏的功能仍然注册在布局里，通过命令或其他入口照常可用。设置保存在本机 profile 中，重启后保留。',
 		}
@@ -109,6 +134,19 @@ window.__ModuleLoader__.load({
 			fixedSettings: 'Settings',
 			fixedFooter: 'Footer actions',
 			fixedBrand: 'Brand mark',
+			collectionTitle: 'Collection',
+			collectionHint: 'Fold the panel entries into one row; hovering opens a two-column card, clicking goes straight to the selected panel. On by default.',
+			collectionName: 'Collection mode',
+			collectionSub: 'Keep one "Collection" row in the sidebar and move every panel entry into the card beside it',
+			collectionOn: 'On',
+			collectionOff: 'Off',
+			collectionCurrent: 'Shown after the slash',
+			collectionNone: 'Nothing selected yet',
+			collectionClear: 'Clear selection',
+			collectionNav: 'Collection',
+			collectionKeysMove: '↑↓ select · ←→ column',
+			collectionKeysOpen: 'Enter open · Esc close',
+			collectionEmpty: 'No panel entry is available to collect.',
 			helpTitle: 'How it works',
 			helpBody: 'This plugin only changes left-menu visibility: a hidden feature stays registered in the layout and remains reachable by command or other entry points. The set lives in this machine\'s profile and survives a restart.',
 		}
@@ -163,12 +201,59 @@ window.__ModuleLoader__.load({
 			'.lp-switch[aria-checked="true"] .lp-knob{transform:translateX(16px);background:#fff}',
 			'@media (prefers-reduced-motion:reduce){.lp-knob,.lp-switch,.lp-btn{transition:none}}',
 
+			// ── collection row + card (styles for the injected sidebar DOM) ──
+			`[${COLLECTION_ATTR}]{position:relative}`,
+			'.lp-coll{display:flex;align-items:center;gap:6px;width:100%;min-height:36px;padding:7px 9px;border:0;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .15s ease}',
+			'.lp-coll:hover,.lp-coll[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover)}',
+			'.lp-coll:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
+			'.lp-coll-glyph{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px}',
+			'.lp-coll-label{flex:0 0 auto;white-space:nowrap}',
+			'.lp-coll-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:16px;padding:0 4px;border-radius:6px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 8%,transparent);color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;font-variant-numeric:tabular-nums}',
+			'.lp-coll-slash{flex:0 0 auto;color:var(--dsw-alias-label-tertiary);margin:0 0}',
+			'.lp-coll-item{flex:0 1 auto;display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--dsw-alias-label-primary)}',
+			'.lp-coll-item[hidden],.lp-coll-slash[hidden]{display:none}',
+			'.lp-coll-item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.lp-coll-chev{flex:0 0 auto;margin-left:auto;color:var(--dsw-alias-label-tertiary);display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;transition:transform .15s ease}',
+			'.lp-coll[aria-expanded="true"] .lp-coll-chev{transform:rotate(180deg)}',
+
+			'.lp-card{position:fixed;z-index:2147483000;box-sizing:border-box;padding:6px;border-radius:var(--dsw-radius-lg,16px);background:var(--dsw-alias-bg-layer-2);border:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);box-shadow:0 3px 8px rgba(0,0,0,.04),0 0 20px rgba(0,0,0,.05);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px}',
+			'.lp-card[hidden]{display:none}',
+			'.lp-card-cols{display:grid;grid-template-columns:1fr 1fr;position:relative}',
+			'.lp-card-cols::before{content:"";position:absolute;left:50%;top:8px;bottom:8px;width:1px;background:var(--dsw-alias-border-l2);transform:translateX(-.5px)}',
+			'.lp-card-col{display:flex;flex-direction:column;gap:2px;min-width:0;padding:0 2px}',
+			'.lp-card-item{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 9px;border:0;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .14s ease,color .14s ease}',
+			'.lp-card-item:hover,.lp-card-item[data-focus="true"]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
+			'.lp-card-item:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
+			'.lp-card-item-glyph{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-label-tertiary)}',
+			'.lp-card-item-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.lp-card-item[data-selected="true"]{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-label-primary);font-weight:600}',
+			'.lp-card-item[data-selected="true"] .lp-card-item-glyph{color:var(--dsw-alias-state-business-primary)}',
+			'.lp-card-item[data-selected="true"]::before{content:"";position:absolute;left:0;top:50%;width:2px;height:16px;border-radius:2px;transform:translateY(-50%);background:var(--dsw-alias-state-business-primary)}',
+			'.lp-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 10px 3px;border-top:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:11.5px;line-height:16px}',
+			'.lp-card-foot kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:0 4px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 6%,transparent);color:var(--dsw-alias-label-secondary)}',
+			'@media (prefers-reduced-motion:reduce){.lp-coll,.lp-coll-chev,.lp-card-item{transition:none}}',
+
 			'.lp-empty{padding:20px 14px;text-align:center;color:var(--dsw-alias-label-tertiary);font-size:12.5px}',
 			'.lp-note{margin-top:22px;padding:13px 14px;border-radius:var(--dsw-radius-lg,14px);border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font-size:12.5px}',
 			'.lp-note b{display:block;margin-bottom:4px;font-size:12px;color:var(--dsw-alias-label-primary)}',
 		].join('\n')
 
 		// ── pure helpers ────────────────────────────────────────────────────
+		/**
+		 * Coerce anything into the collection setting. Mirrors the host half so
+		 * the boot mirror and a hand-edited `localStorage` entry cannot put the
+		 * page in a state the host would never write.
+		 * @param {unknown} value
+		 * @returns {{ enabled: boolean, selectedId: string | null }}
+		 */
+		function normalizeCollection(value) {
+			const source = value !== null && typeof value === 'object' ? value : {}
+			const enabled = source.enabled === undefined ? true : source.enabled === true
+			const raw = typeof source.selectedId === 'string' ? source.selectedId.trim() : ''
+			const selectedId = raw === '' || raw.length > 120 || /\s/.test(raw) ? null : raw
+			return { enabled, selectedId }
+		}
+
 		/**
 		 * Resolve a slot label the way the shell does: `resolveSlotLabel` calls a
 		 * thunk, and the sidebar then falls back to the id only for `null`/
@@ -274,6 +359,8 @@ window.__ModuleLoader__.load({
 				// ── shared state ──────────────────────────────────────────────
 				/** Hidden ids; the host file is the authority, localStorage the boot mirror. */
 				let hidden = readMirror()
+				/** Collection setting; same authority chain as `hidden`. */
+				let collection = readCollectionMirror()
 				/** @type {'load' | 'save' | null} */
 				let error = null
 				/** Live row projection; refreshed on slot and locale changes. */
@@ -281,7 +368,7 @@ window.__ModuleLoader__.load({
 
 				/** View subscribers (the page) and the memoised snapshot. */
 				const listeners = new Set()
-				/** @type {{ panels: any[], hidden: string[], error: string | null } | null} */
+				/** @type {{ panels: any[], hidden: string[], collection: { enabled: boolean, selectedId: string | null }, error: string | null } | null} */
 				let snapshot = null
 
 				const emit = () => {
@@ -301,6 +388,7 @@ window.__ModuleLoader__.load({
 							snapshot = {
 								panels: panels.map((panel) => ({ id: panel.id, label: panel.label })),
 								hidden: [...hidden],
+								collection: { enabled: collection.enabled, selectedId: collection.selectedId },
 								error,
 							}
 						}
@@ -320,6 +408,24 @@ window.__ModuleLoader__.load({
 						return normalizeIds(JSON.parse(window.localStorage.getItem(MIRROR_KEY) ?? '[]'))
 					} catch {
 						return []
+					}
+				}
+
+				/** @returns {{ enabled: boolean, selectedId: string | null }} */
+				function readCollectionMirror() {
+					try {
+						return normalizeCollection(JSON.parse(window.localStorage.getItem(COLLECTION_MIRROR_KEY) ?? 'null'))
+					} catch {
+						return normalizeCollection(null)
+					}
+				}
+
+				/** @param {{ enabled: boolean, selectedId: string | null }} value */
+				function writeCollectionMirror(value) {
+					try {
+						window.localStorage.setItem(COLLECTION_MIRROR_KEY, JSON.stringify(value))
+					} catch {
+						// Same as the hidden mirror: the host file still holds the truth.
 					}
 				}
 
@@ -350,6 +456,21 @@ window.__ModuleLoader__.load({
 					return changed
 				}
 
+				/**
+				 * Replace the collection setting locally. Like `setHidden`, this only
+				 * touches local state; the caller persists.
+				 * @param {unknown} next
+				 * @returns {boolean} whether anything moved
+				 */
+				function setCollection(next) {
+					const clean = normalizeCollection(next)
+					if (clean.enabled === collection.enabled && clean.selectedId === collection.selectedId) return false
+					collection = clean
+					writeCollectionMirror(clean)
+					emit()
+					return true
+				}
+
 				// ── DOM pass ──────────────────────────────────────────────────
 				/**
 				 * Find the sidebar's row list: the `<nav>` that holds the panel
@@ -364,7 +485,11 @@ window.__ModuleLoader__.load({
 					/** @type {Element[]} */
 					const candidates = [...document.querySelectorAll('nav')]
 					for (const nav of candidates) {
-						const buttons = [...nav.children].filter((node) => node.tagName === 'BUTTON')
+						// Our own injected row is a button too; it must not decide
+						// whether this nav is the panel list.
+						const buttons = [...nav.children].filter(
+							(node) => node.tagName === 'BUTTON' && node.getAttribute(COLLECTION_ATTR) === null,
+						)
 						if (buttons.length === 0) continue
 						// A panel row is a button with an accessible name; the workspaces
 						// and footer seats are lists of a different shape.
@@ -387,7 +512,9 @@ window.__ModuleLoader__.load({
 					const rowList = findRowList()
 					if (rowList === null) return
 
-					const rows = [...rowList.children].filter((node) => node.tagName === 'BUTTON')
+					const rows = [...rowList.children].filter(
+						(node) => node.tagName === 'BUTTON' && !node.hasAttribute?.(COLLECTION_ATTR) && node.getAttribute(COLLECTION_ATTR) === null,
+					)
 					const hiddenSet = new Set(ids)
 					const positional = rows.length === list.length
 					for (let index = 0; index < rows.length; index += 1) {
@@ -408,10 +535,501 @@ window.__ModuleLoader__.load({
 					}
 				}
 
-				/** Re-run the DOM pass from current state. */
-				function paint() {
+				// ── collection row + card ─────────────────────────────────────
+				/** Signature of the row list the injected row/card were built for. */
+				let collectionSignature = ''
+				/** The injected row button, if present. */
+				/** @type {any} */
+				let collectionRow = null
+				/** The floating card, if present. */
+				/** @type {any} */
+				let collectionCard = null
+				/** Pending "close because the pointer left" timer. */
+				let closeTimer = 0
+				/** Document-level "click outside closes the card" listener. */
+				/** @type {any} */
+				let outsideListener = null
+				/**
+				 * Set when the card was closed on purpose (Escape, a pick, a click
+				 * outside). Focus returning to the row must not re-open it in that
+				 * case, or Escape would be a no-op: closing moves focus to the row,
+				 * and a focus-driven open would immediately undo it.
+				 */
+				let suppressFocusOpen = false
+				/** Index of the keyboard-highlighted item, per column. */
+				let cardFocus = { column: 0, index: 0 }
+
+				/** Collect the live panel rows and the glyph each one paints. */
+				function readRowModel() {
+					const rowList = findRowList()
+					if (rowList === null) return null
+					// The injected collection row is a button too; it must never be
+					// read back as a panel entry, or it would list itself.
+					const rows = [...rowList.children].filter(
+						(node) => node.tagName === 'BUTTON' && node.getAttribute(COLLECTION_ATTR) === null,
+					)
+					const byLabel = new Map(panels.map((panel) => [panel.label, panel.id]))
+					const items = rows.map((row) => {
+						const label = row.getAttribute('aria-label') ?? ''
+						const glyph = row.firstElementChild
+						return {
+							id: byLabel.get(label) ?? label,
+							label,
+							glyph: glyph === null || glyph === undefined ? null : glyph.innerHTML,
+							hidden: row.getAttribute(HIDE_ATTR) !== null,
+						}
+					})
+					return { rowList, rows, items }
+				}
+
+				/** Resolve the entry the row's slash should show. */
+				function selectedPanel() {
+					if (collection.selectedId === null) return null
+					return panels.find((panel) => panel.id === collection.selectedId) ?? null
+				}
+
+				/** Build (once) the synthetic row button. */
+				function buildRow() {
+					const row = document.createElement('button')
+					row.type = 'button'
+					row.className = 'lp-coll'
+					row.setAttribute(COLLECTION_ATTR, '')
+					row.setAttribute('aria-haspopup', 'dialog')
+					row.setAttribute('aria-expanded', 'false')
+					// Named from the first paint: `findRowList` identifies the row
+					// list as "the <nav> whose buttons all carry an accessible name",
+					// so an anonymous row would make the pass lose its own anchor and
+					// tear the row down again on the next frame.
+					row.setAttribute('aria-label', t('collectionNav'))
+
+					const glyph = document.createElement('span')
+					glyph.className = 'lp-coll-glyph'
+					glyph.setAttribute('aria-hidden', 'true')
+					glyph.innerHTML = collectionGlyph()
+
+					const label = document.createElement('span')
+					label.className = 'lp-coll-label'
+
+					const badge = document.createElement('span')
+					badge.className = 'lp-coll-badge'
+					badge.setAttribute('aria-hidden', 'true')
+
+					const slash = document.createElement('span')
+					slash.className = 'lp-coll-slash'
+					slash.setAttribute('aria-hidden', 'true')
+					slash.textContent = '/'
+
+					const item = document.createElement('span')
+					item.className = 'lp-coll-item'
+					const itemGlyph = document.createElement('span')
+					itemGlyph.className = 'lp-coll-glyph'
+					itemGlyph.setAttribute('aria-hidden', 'true')
+					const itemName = document.createElement('span')
+					itemName.className = 'lp-coll-item-name'
+					item.append(itemGlyph, itemName)
+
+					const chev = document.createElement('span')
+					chev.className = 'lp-coll-chev'
+					chev.setAttribute('aria-hidden', 'true')
+					chev.innerHTML = chevronGlyph()
+
+					row.append(glyph, label, badge, slash, item, chev)
+					return row
+				}
+
+				/** Build (once) the floating card. */
+				function buildCard() {
+					const card = document.createElement('div')
+					card.className = 'lp-card'
+					card.setAttribute(CARD_ATTR, '')
+					card.setAttribute('role', 'dialog')
+					card.hidden = true
+
+					const cols = document.createElement('div')
+					cols.className = 'lp-card-cols'
+					const left = document.createElement('div')
+					left.className = 'lp-card-col'
+					left.setAttribute('data-column', '0')
+					const right = document.createElement('div')
+					right.className = 'lp-card-col'
+					right.setAttribute('data-column', '1')
+					cols.append(left, right)
+
+					const foot = document.createElement('div')
+					foot.className = 'lp-card-foot'
+					const hintMove = document.createElement('span')
+					hintMove.setAttribute('data-role', 'hint-move')
+					const hintOpen = document.createElement('span')
+					hintOpen.setAttribute('data-role', 'hint-open')
+					foot.append(hintMove, hintOpen)
+
+					card.append(cols, foot)
+					return card
+				}
+
+				/** The collection glyph: three stacked bars folding into one. */
+				function collectionGlyph() {
+					return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
+						+ '<rect x="1.8" y="2.2" width="12.4" height="3.2" rx="1.3" stroke="currentColor" stroke-width="1.3"/>'
+						+ '<rect x="1.8" y="6.6" width="12.4" height="3.2" rx="1.3" stroke="currentColor" stroke-width="1.3" opacity=".62"/>'
+						+ '<rect x="1.8" y="11" width="12.4" height="3.2" rx="1.3" stroke="currentColor" stroke-width="1.3" opacity=".34"/>'
+						+ '</svg>'
+				}
+
+				/** The chevron the row carries on its right edge. */
+				function chevronGlyph() {
+					return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
+						+ '<path d="M4.4 6.4 8 10l3.6-3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+						+ '</svg>'
+				}
+
+				/** Split the entries into the card's two columns (column-major). */
+				function splitColumns(items) {
+					const half = Math.ceil(items.length / 2)
+					return [items.slice(0, half), items.slice(half)]
+				}
+
+				/** Repaint the card's contents for the current entries. */
+				function fillCard(items) {
+					if (collectionCard === null) return
+					const tFn = t
+					const [left, right] = splitColumns(items)
+					const columns = [left, right]
+					const cols = collectionCard.firstElementChild
+					for (let column = 0; column < 2; column += 1) {
+						const host = cols.children[column]
+						host.textContent = ''
+						for (const item of columns[column]) {
+							const button = document.createElement('button')
+							button.type = 'button'
+							button.className = 'lp-card-item'
+							button.setAttribute('data-id', item.id)
+							button.setAttribute('data-column', String(column))
+							if (item.id === collection.selectedId) button.setAttribute('data-selected', 'true')
+							button.setAttribute('aria-current', item.id === collection.selectedId ? 'true' : 'false')
+							const glyph = document.createElement('span')
+							glyph.className = 'lp-card-item-glyph'
+							glyph.setAttribute('aria-hidden', 'true')
+							glyph.innerHTML = item.glyph ?? ''
+							const name = document.createElement('span')
+							name.className = 'lp-card-item-name'
+							name.textContent = item.label
+							button.append(glyph, name)
+							host.append(button)
+						}
+					}
+					const foot = collectionCard.lastElementChild
+					const move = foot.querySelector('[data-role="hint-move"]')
+					const open = foot.querySelector('[data-role="hint-open"]')
+					if (move !== null) move.textContent = tFn('collectionKeysMove')
+					if (open !== null) open.innerHTML = ''
+					if (open !== null) {
+						const parts = tFn('collectionKeysOpen').split(' · ')
+						for (const part of parts) {
+							const kbd = document.createElement('kbd')
+							kbd.textContent = part.split(' ')[0]
+							const rest = document.createElement('span')
+							rest.textContent = ' ' + part.split(' ').slice(1).join(' ') + ' '
+							open.append(kbd, rest)
+						}
+					}
+				}
+
+				/** Paint the row's text for the current selection. */
+				function fillRow(items) {
+					if (collectionRow === null) return
+					const label = collectionRow.querySelector('.lp-coll-label')
+					const badge = collectionRow.querySelector('.lp-coll-badge')
+					const slash = collectionRow.querySelector('.lp-coll-slash')
+					const item = collectionRow.querySelector('.lp-coll-item')
+					const itemGlyph = item === null ? null : item.querySelector('.lp-coll-glyph')
+					const itemName = item === null ? null : item.querySelector('.lp-coll-item-name')
+					if (label !== null) label.textContent = t('collectionNav')
+					if (badge !== null) badge.textContent = String(items.length)
+					const selected = selectedPanel()
+					const source = selected === null ? null : items.find((entry) => entry.id === selected.id)
+					const show = selected !== null
+					if (slash !== null) slash.hidden = !show
+					if (item !== null) item.hidden = !show
+					if (show) {
+						if (itemGlyph !== null) itemGlyph.innerHTML = source?.glyph ?? ''
+						if (itemName !== null) itemName.textContent = selected.label
+					}
+					collectionRow.setAttribute(
+						'aria-label',
+						show ? t('collectionNav') + ' / ' + selected.label : t('collectionNav'),
+					)
+				}
+
+				/** Position the card against the row, clamped into the viewport. */
+				function placeCard() {
+					if (collectionCard === null || collectionRow === null) return
+					const rowRect = collectionRow.getBoundingClientRect()
+					const height = collectionCard.offsetHeight
+					const maxTop = window.innerHeight - height - 8
+					const top = Math.max(8, Math.min(rowRect.top, maxTop))
+					const left = Math.min(rowRect.right + CARD_GAP, window.innerWidth - CARD_WIDTH - 8)
+					collectionCard.style.left = Math.max(8, left) + 'px'
+					collectionCard.style.top = top + 'px'
+					collectionCard.style.width = CARD_WIDTH + 'px'
+				}
+
+				/** @param {boolean} open */
+				function setCardOpen(open) {
+					if (collectionRow === null || collectionCard === null) return
+					if (open && collection.enabled !== true) return
+					collectionRow.setAttribute('aria-expanded', open ? 'true' : 'false')
+					collectionCard.hidden = !open
+					if (open) {
+						placeCard()
+						const first = collectionCard.querySelector('.lp-card-item')
+						if (first !== null) {
+							cardFocus = { column: 0, index: 0 }
+							markFocus()
+						}
+					}
+				}
+
+				/** Apply the keyboard highlight to the card items. */
+				function markFocus() {
+					if (collectionCard === null) return
+					const items = [...collectionCard.querySelectorAll('.lp-card-item')]
+					for (const item of items) {
+						const column = Number(item.getAttribute('data-column'))
+						const index = [...item.parentElement.children].indexOf(item)
+						const on = column === cardFocus.column && index === cardFocus.index
+						if (on) item.setAttribute('data-focus', 'true')
+						else item.removeAttribute('data-focus')
+					}
+				}
+
+				/** Choose a panel: persist the selection, then open it for real. */
+				/** @param {string} id */
+				function chooseEntry(id) {
+					const next = { enabled: true, selectedId: id }
+					setCollection(next)
+					void saveToHost({ collection: next })
+					suppressFocusOpen = true
+					setCardOpen(false)
+					// Open the panel exactly the way its own row would: ask the
+					// layout service, and fall back to a click on the real row when
+					// the service is not reachable from here.
+					let opened = false
 					try {
-						applyRowMarks(hidden, panels)
+						ctx.layout.selectPanel(id)
+						opened = true
+					} catch {
+						opened = false
+					}
+					if (!opened) {
+						const model = readRowModel()
+						const row = model?.rows.find((candidate) => candidate.getAttribute('aria-label') === id
+							|| (panels.find((panel) => panel.id === id)?.label ?? '') === candidate.getAttribute('aria-label'))
+						row?.click()
+					}
+				}
+
+				/** Wire the row and the card once. */
+				function wireCollection() {
+					if (collectionRow === null || collectionCard === null) return
+					const open = () => {
+						if (closeTimer !== 0) {
+							window.clearTimeout(closeTimer)
+							closeTimer = 0
+						}
+						setCardOpen(true)
+					}
+					const openFromPointer = () => {
+						suppressFocusOpen = false
+						open()
+					}
+					const closeNow = () => {
+						suppressFocusOpen = true
+						if (closeTimer !== 0) {
+							window.clearTimeout(closeTimer)
+							closeTimer = 0
+						}
+						setCardOpen(false)
+					}
+					const scheduleClose = () => {
+						if (closeTimer !== 0) window.clearTimeout(closeTimer)
+						closeTimer = window.setTimeout(() => {
+							closeTimer = 0
+							setCardOpen(false)
+						}, CARD_CLOSE_DELAY)
+					}
+					collectionRow.addEventListener('pointerenter', openFromPointer)
+					collectionRow.addEventListener('pointerleave', scheduleClose)
+					collectionRow.addEventListener('focus', () => {
+						if (suppressFocusOpen) return
+						open()
+					})
+					collectionCard.addEventListener('pointerenter', openFromPointer)
+					collectionCard.addEventListener('pointerleave', scheduleClose)
+					collectionRow.addEventListener('click', () => {
+						const selected = selectedPanel()
+						// First use never navigates: with nothing selected the row only
+						// reveals the card, which is the whole point of the mode.
+						if (selected === null) {
+							setCardOpen(true)
+							return
+						}
+						chooseEntry(selected.id)
+					})
+					collectionRow.addEventListener('keydown', (event) => {
+						if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+							event.preventDefault()
+							open()
+							const first = collectionCard.querySelector('.lp-card-item')
+							if (first !== null) first.focus()
+						}
+					})
+					// One document-level listener per mount; `unmountCollection`
+					// removes it, so toggling the mode on and off cannot pile them up.
+					outsideListener = (event) => {
+						if (collectionCard === null || collectionCard.hidden) return
+						const target = event.target
+						if (collectionCard.contains(target) || collectionRow?.contains(target) === true) return
+						closeNow()
+					}
+					document.addEventListener('pointerdown', outsideListener, true)
+					collectionCard.addEventListener('click', (event) => {
+						const button = event.target.closest?.('.lp-card-item')
+						if (button === null || button === undefined) return
+						const id = button.getAttribute('data-id')
+						if (id !== null) chooseEntry(id)
+					})
+					collectionCard.addEventListener('keydown', (event) => {
+						const items = [...collectionCard.querySelectorAll('.lp-card-item')]
+						if (items.length === 0) return
+						const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
+						if (event.key === 'Escape') {
+							event.preventDefault()
+							closeNow()
+							collectionRow.focus()
+							return
+						}
+						if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+							event.preventDefault()
+							const size = columns[cardFocus.column].length
+							if (size === 0) return
+							const step = event.key === 'ArrowDown' ? 1 : -1
+							cardFocus.index = (cardFocus.index + step + size) % size
+						} else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+							event.preventDefault()
+							const next = cardFocus.column === 0 ? 1 : 0
+							if (columns[next].length === 0) return
+							cardFocus.column = next
+							cardFocus.index = Math.min(cardFocus.index, columns[next].length - 1)
+						} else if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault()
+							const active = columns[cardFocus.column][cardFocus.index]
+							if (active !== undefined) chooseEntry(active.getAttribute('data-id'))
+							return
+						} else {
+							return
+						}
+						markFocus()
+						const active = columns[cardFocus.column][cardFocus.index]
+						active?.focus()
+					})
+				}
+
+				/** Remove the injected row and card, if they exist. */
+				function unmountCollection() {
+					if (collectionRow !== null) collectionRow.remove()
+					if (collectionCard !== null) collectionCard.remove()
+					if (outsideListener !== null) {
+						document.removeEventListener('pointerdown', outsideListener, true)
+						outsideListener = null
+					}
+					if (closeTimer !== 0) {
+						window.clearTimeout(closeTimer)
+						closeTimer = 0
+					}
+					collectionRow = null
+					collectionCard = null
+					collectionSignature = ''
+				}
+
+				/**
+				 * Mount or refresh the injected row and card.
+				 * @returns {boolean} whether the row is in the sidebar row list now
+				 */
+				function mountCollection() {
+					const model = readRowModel()
+					if (model === null) return false
+					const { rowList, items } = model
+					const signature = items.map((item) => item.id + ':' + item.label).join('|') + '@' + (collection.selectedId ?? '')
+					if (collectionRow === null || collectionRow.parentNode !== rowList) {
+						collectionRow?.remove()
+						collectionRow = buildRow()
+						// `firstElementChild`, not `firstChild`: the shell may leave a
+						// whitespace text node ahead of the rows, and the injected row
+						// must land above the first *element*.
+						rowList.insertBefore(collectionRow, rowList.firstElementChild)
+					}
+					if (collectionCard === null) {
+						collectionCard = buildCard()
+						wireCollection()
+						document.body.append(collectionCard)
+					}
+					// The rail (collapsed sidebar) has no room for text: the row keeps
+					// its glyph and the selected entry's icon becomes a corner mark.
+					const narrow = rowList.getBoundingClientRect().width < 120
+					collectionRow.setAttribute('data-collapsed', narrow ? 'true' : 'false')
+					if (signature !== collectionSignature) {
+						collectionSignature = signature
+						fillCard(items)
+						fillRow(items)
+					}
+					if (collectionRow.getAttribute('aria-expanded') === 'true') placeCard()
+					return collectionRow.parentNode === rowList
+				}
+
+				/** Keep the card glued to its row while the page moves. */
+				function trackCardPosition() {
+					const reposition = () => {
+						if (collectionCard !== null && collectionCard.hidden === false) placeCard()
+					}
+					window.addEventListener('resize', reposition)
+					window.addEventListener('scroll', reposition, true)
+					return () => {
+						window.removeEventListener('resize', reposition)
+						window.removeEventListener('scroll', reposition, true)
+					}
+				}
+
+				/**
+				 * Re-run the DOM pass from current state.
+				 *
+				 * Collection mode hides every panel row, so it is only allowed to do
+				 * that once its own row is actually in the list: if the injection
+				 * fails, the rows stay visible. "Hides nothing" is always the safe
+				 * degradation, never "hides the menu with no way back".
+				 */
+				function paint() {
+					let folded = false
+					if (collection.enabled === true) {
+						try {
+							folded = mountCollection()
+						} catch {
+							folded = false
+						}
+						if (!folded) {
+							try {
+								unmountCollection()
+							} catch {
+								// Nothing to clean up if the row never mounted.
+							}
+						}
+					}
+					try {
+						// Only panel rows fold. The shell's overflow launcher ("更多") is
+						// left alone: it carries `sidebar.panellist.actions`, which the
+						// card does not list, so hiding it would lose entries.
+						const effective = folded ? panels.map((panel) => panel.id) : hidden
+						applyRowMarks(effective, panels)
 					} catch {
 						// A presentation pass failure must never take a page down.
 					}
@@ -444,24 +1062,31 @@ window.__ModuleLoader__.load({
 						if (!response.ok) throw new Error('HTTP ' + response.status)
 						const data = await response.json()
 						setHidden(data?.hidden, null)
+						setCollection(data?.collection)
 					} catch {
 						setHidden(hidden, 'load')
 					}
 				}
 
-				/** @param {string[]} ids */
-				async function saveToHost(ids) {
+				/**
+				 * Persist either half of the document. An omitted field means "leave
+				 * it alone", so a hidden-set write never clobbers the collection
+				 * setting and vice versa.
+				 * @param {{ hidden?: string[], collection?: { enabled: boolean, selectedId: string | null } }} patch
+				 */
+				async function saveToHost(patch) {
 					try {
 						const response = await fetch(STATE_PATH, {
 							method: 'POST',
 							credentials: 'same-origin',
 							cache: 'no-store',
 							headers: { accept: 'application/json', 'content-type': 'application/json' },
-							body: JSON.stringify({ hidden: ids }),
+							body: JSON.stringify(patch),
 						})
 						if (!response.ok) throw new Error('HTTP ' + response.status)
 						const data = await response.json()
 						setHidden(data?.hidden, null)
+						setCollection(data?.collection)
 					} catch {
 						setHidden(hidden, 'save')
 					}
@@ -474,19 +1099,33 @@ window.__ModuleLoader__.load({
 					if (next.has(id)) next.delete(id)
 					else next.add(id)
 					setHidden([...next], null)
-					void saveToHost(hidden)
+					void saveToHost({ hidden })
 				}
 
 				function resetAll() {
 					setHidden([], null)
-					void saveToHost([])
+					void saveToHost({ hidden: [] })
+				}
+
+				function toggleCollection() {
+					const next = { enabled: collection.enabled !== true, selectedId: collection.selectedId }
+					setCollection(next)
+					void saveToHost({ collection: next })
+					paint()
+				}
+
+				function clearSelection() {
+					const next = { enabled: collection.enabled, selectedId: null }
+					setCollection(next)
+					void saveToHost({ collection: next })
+					paint()
 				}
 
 				function clearStale() {
 					const live = new Set(panels.map((panel) => panel.id))
 					const kept = hidden.filter((id) => live.has(id))
 					setHidden(kept, null)
-					void saveToHost(kept)
+					void saveToHost({ hidden: kept })
 				}
 
 				// ── page ──────────────────────────────────────────────────────
@@ -501,6 +1140,33 @@ window.__ModuleLoader__.load({
 						title: props.label,
 						onClick: props.onToggle,
 					}, h('span', { className: 'lp-knob', 'aria-hidden': 'true' }))
+				}
+
+				/** The collection glyph, matching the row injected into the sidebar. */
+				function CollectionIcon(props) {
+					const size = props && typeof props.size === 'number' && props.size > 0 ? props.size : 16
+					return h('svg', {
+						width: size,
+						height: size,
+						viewBox: '0 0 16 16',
+						fill: 'none',
+						focusable: 'false',
+						'aria-hidden': 'true',
+						style: { display: 'block' },
+					},
+					h('rect', { x: 1.8, y: 2.2, width: 12.4, height: 3.2, rx: 1.3, stroke: 'currentColor', strokeWidth: 1.3 }),
+					h('rect', { x: 1.8, y: 6.6, width: 12.4, height: 3.2, rx: 1.3, stroke: 'currentColor', strokeWidth: 1.3, opacity: 0.62 }),
+					h('rect', { x: 1.8, y: 11, width: 12.4, height: 3.2, rx: 1.3, stroke: 'currentColor', strokeWidth: 1.3, opacity: 0.34 }))
+				}
+
+				/**
+				 * Label of the entry the row's slash shows, or null.
+				 * @param {(key: string, vars?: any) => string} tFn
+				 * @returns {string | null}
+				 */
+				function selectedLabel(tFn) {
+					const panel = selectedPanel()
+					return panel === null ? null : panel.label
 				}
 
 				/** The left-menu glyph: a sidebar pane with its rows. */
@@ -582,6 +1248,37 @@ window.__ModuleLoader__.load({
 							? null
 							: h('div', { className: 'lp-err' },
 								current.error === 'save' ? tFn('errorSave') : tFn('errorLoad')),
+
+						h('section', { className: 'lp-section', 'data-section': 'collection' },
+							h('div', { className: 'lp-section-head' },
+								h('h2', { className: 'lp-h2' }, tFn('collectionTitle')),
+								h('span', { className: 'lp-hint' }, tFn('collectionHint'))),
+							h('div', { className: 'lp-card' },
+								h('div', { className: 'lp-row' },
+									h('span', { className: 'lp-glyph', 'aria-hidden': 'true' }, h(CollectionIcon, { size: 15 })),
+									h('span', { className: 'lp-main' },
+										h('span', { className: 'lp-name' }, tFn('collectionName')),
+										h('span', { className: 'lp-sub' }, tFn('collectionSub'))),
+									h('span', {
+										className: 'lp-tag',
+										'data-tone': current.collection.enabled ? 'shown' : 'hidden',
+									}, current.collection.enabled ? tFn('collectionOn') : tFn('collectionOff')),
+									h(Switch, {
+										checked: current.collection.enabled,
+										label: tFn('collectionName') + ' — ' + (current.collection.enabled ? tFn('collectionOn') : tFn('collectionOff')),
+										onToggle: toggleCollection,
+									})),
+								h('div', { className: 'lp-row' },
+									h('span', { className: 'lp-glyph', 'aria-hidden': 'true' }, h(MenuIcon, { size: 15 })),
+									h('span', { className: 'lp-main' },
+										h('span', { className: 'lp-name' }, tFn('collectionCurrent')),
+										h('span', { className: 'lp-sub' }, selectedLabel(tFn) ?? tFn('collectionNone'))),
+									h('button', {
+										type: 'button',
+										className: 'lp-btn',
+										disabled: current.collection.selectedId === null,
+										onClick: clearSelection,
+									}, tFn('collectionClear'))))),
 
 						h('section', { className: 'lp-section', 'data-section': 'panels' },
 							h('div', { className: 'lp-section-head' },

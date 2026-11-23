@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSH 左栏 · 集合 · 方向 B</title>
+<style>
+  /* ---------- 主题变量 ---------- */
+  :root{
+    --font: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --page-bg:#0e0e10;
+    --frame-bg:#161618;
+    --frame-border:rgba(255,255,255,.08);
+
+    --app-bg:#151517;
+    --sidebar-bg:#1b1b1c;
+    --card-bg:#29292e;
+
+    --text:#e7e8ea;
+    --text-dim:#9aa0a6;
+    --text-mute:#81858c;
+    --slash:#adb2b8;
+
+    --btn-bg:#3a3c41;
+    --btn-bg-hover:#45474d;
+    --badge-bg:#ffffff14;
+    --row-hover:#ffffff14;
+    --row-hover-soft:#ffffff0a;
+    --search-bg:#ffffff0f;
+
+    --hairline:rgba(255,255,255,.16);
+    --hairline-soft:rgba(255,255,255,.08);
+
+    --accent:#7aaaff;
+    --accent-soft:#7aaaff14;
+    --accent-soft-hover:#7aaaff24;
+    --accent-ink:#ffffff;
+
+    --card-shadow: 0 3px 8px rgba(0,0,0,.04), 0 0 20px rgba(0,0,0,.05);
+  }
+
+  html[data-theme="light"]{
+    --page-bg:#eef0f2;
+    --frame-bg:#ffffff;
+    --frame-border:rgba(0,0,0,.08);
+
+    --app-bg:#f4f4f5;
+    --sidebar-bg:#fbfbfc;
+    --card-bg:#ffffff;
+
+    --text:#1d1d20;
+    --text-dim:#5f646b;
+    --text-mute:#6b7076;
+    --slash:#71767d;
+
+    --btn-bg:#e6e7ea;
+    --btn-bg-hover:#dcdde1;
+    --badge-bg:rgba(0,0,0,.06);
+    --row-hover:rgba(0,0,0,.06);
+    --row-hover-soft:rgba(0,0,0,.035);
+    --search-bg:rgba(0,0,0,.045);
+
+    --hairline:rgba(0,0,0,.14);
+    --hairline-soft:rgba(0,0,0,.08);
+
+    --accent:#2f6fe4;
+    --accent-soft:rgba(47,111,228,.12);
+    --accent-soft-hover:rgba(47,111,228,.18);
+    --accent-ink:#17181a;
+
+    --card-shadow: 0 3px 8px rgba(0,0,0,.06), 0 0 20px rgba(0,0,0,.07);
+  }
+
+  /* ---------- 基础 ---------- */
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--page-bg);
+    color:var(--text);
+    font:400 14px/1.6 var(--font);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    padding:28px 28px 48px;
+  }
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  ul,ol,dl,dd{margin:0;padding:0;list-style:none}
+  h1,h2,h3,p{margin:0}
+
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+  .sprite{position:absolute;width:0;height:0;overflow:hidden}
+  .ico{
+    width:16px;height:16px;flex:0 0 16px;display:block;
+    fill:none;stroke:currentColor;stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+
+  /* ---------- 舞台标题 ---------- */
+  .stage-head{
+    max-width:1400px;margin:0 auto 20px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  }
+  .stage-head h1{font-size:17px;font-weight:600;letter-spacing:.01em}
+  .stage-head p{margin-top:4px;font-size:12.5px;color:var(--text-mute)}
+
+  .theme-toggle{
+    height:32px;padding:0 12px;border-radius:10px;
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12.5px;color:var(--text-dim);
+    background:var(--frame-bg);
+    border:1px solid var(--frame-border);
+    transition:background .18s ease, color .18s ease;
+  }
+  .theme-toggle:hover{background:var(--btn-bg-hover);color:var(--text)}
+  .theme-toggle .ico{width:14px;height:14px;flex-basis:14px}
+
+  /* ---------- 并排两个状态 ---------- */
+  .frames{
+    max-width:1400px;margin:0 auto;
+    display:flex;gap:24px;align-items:flex-start;
+    overflow-x:auto;padding-bottom:8px;
+  }
+  .frame{flex:0 0 auto}
+  .frame-title{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:500;color:var(--text-mute);
+    margin:0 0 10px 4px;letter-spacing:.02em;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--text-mute);opacity:.5}
+  .dot--on{background:var(--accent);opacity:1;box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .device{
+    position:relative;
+    display:flex;
+    width:660px;height:704px;
+    background:var(--app-bg);
+    border:1px solid var(--hairline-soft);
+    border-radius:16px;
+    overflow:hidden;
+  }
+
+  /* ---------- 左侧栏 ---------- */
+  .sidebar{
+    width:280px;flex:0 0 280px;height:100%;
+    background:var(--sidebar-bg);
+    border-right:1px solid var(--hairline-soft);
+    padding:8px;
+    display:flex;flex-direction:column;
+  }
+
+  .brand{height:40px;display:flex;align-items:center;gap:6px;padding:0 8px}
+  .brand-mark{font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--text)}
+  .brand-sub{
+    font-size:10px;font-weight:600;letter-spacing:.16em;
+    color:var(--text-mute);text-transform:uppercase;
+    padding-top:1px;
+  }
+
+  .new-btn{
+    height:36px;margin-top:8px;padding:0 10px;
+    display:flex;align-items:center;gap:6px;
+    border-radius:10px;
+    background:var(--btn-bg);
+    color:var(--text);
+    font-size:13.5px;
+    transition:background .18s ease;
+  }
+  .new-btn:hover{background:var(--btn-bg-hover)}
+  .new-btn .ico{width:16px;height:16px;flex-basis:16px;opacity:.85}
+
+  .panel-list{margin-top:12px}
+
+  /* 集合行：高 36 / 圆角 12 / 内边距 7 9 / 图标 16 / 间距 6 / 字号 14 */
+  .row{
+    display:flex;align-items:center;gap:6px;
+    height:36px;padding:7px 9px;
+    border-radius:12px;
+    font-size:14px;color:var(--text);
+    width:100%;text-align:left;
+    transition:background .16s ease;
+  }
+  .row .ico{color:var(--text-dim);transition:color .16s ease}
+  .row:hover{background:var(--row-hover-soft)}
+  .row:hover .ico{color:var(--text-dim)}
+
+  .row--collection{position:relative}
+  .row--collection.is-open{background:var(--row-hover-soft)}
+  .row-label{color:var(--text-dim);flex:0 0 auto}
+  .badge{
+    height:16px;min-width:16px;padding:0 4px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:6px;
+    background:var(--badge-bg);
+    color:var(--text-dim);
+    font-size:11px;line-height:16px;font-variant-numeric:tabular-nums;
+    flex:0 0 auto;
+  }
+  .slash{
+    color:var(--slash);
+    font-size:13px;line-height:1;
+    flex:0 0 auto;
+    user-select:none;
+  }
+  .ico--sel{color:var(--text-dim)}
+  .row-value{
+    color:var(--text);font-weight:500;
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .chev{
+    width:13px;height:13px;flex-basis:13px;
+    margin-left:auto;color:var(--text-mute);opacity:.75;
+  }
+
+  /* 工作区分组 */
+  .section{margin-top:16px}
+  .section-title{
+    font-size:11px;font-weight:600;line-height:20px;
+    letter-spacing:.1em;
+    color:var(--text-mute);
+    padding:0 9px;
+    text-transform:uppercase;
+  }
+  .ws-list{margin-top:2px}
+  .row--ws{height:32px;padding:5px 9px;border-radius:10px;font-size:13.5px;color:var(--text-dim)}
+  .row--ws:hover{background:var(--row-hover-soft);color:var(--text)}
+  .row--ws span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row--ghost{
+    height:32px;padding:5px 9px;margin-top:4px;
+    border-radius:10px;font-size:13px;color:var(--text-mute);
+  }
+  .row--ghost:hover{background:var(--row-hover-soft);color:var(--text-dim)}
+  .row--ghost .ico{width:14px;height:14px;flex-basis:14px}
+
+  .sidebar-foot{
+    margin-top:auto;padding-top:8px;
+    border-top:1px solid var(--hairline-soft);
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .row--foot{
+    height:32px;padding:5px 9px;border-radius:10px;
+    font-size:13px;color:var(--text-mute);
+  }
+  .row--foot:hover{background:var(--row-hover-soft);color:var(--text-dim)}
+  .row--foot .ico{width:15px;height:15px;flex-basis:15px}
+  .foot-tag{
+    margin-left:auto;font-size:11px;color:var(--text-mute);
+    opacity:.8;letter-spacing:.02em;
+  }
+
+  /* ---------- 右侧应用区（占位） ---------- */
+  .app-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;height:100%}
+  .app-topline{
+    height:44px;padding:0 16px;flex:0 0 auto;
+    display:flex;align-items:center;gap:8px;
+    border-bottom:1px solid var(--hairline-soft);
+    font-size:12.5px;color:var(--text-dim);
+  }
+  .app-crumb-sep{color:var(--text-mute);opacity:.6}
+  .app-crumb-dim{color:var(--text-mute)}
+  .app-placeholder{
+    flex:1 1 auto;margin:12px;
+    border:1px dashed var(--hairline-soft);
+    border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .app-placeholder span{font-size:12px;color:var(--text-mute);opacity:.8;letter-spacing:.04em}
+
+  /* ---------- 方向 B：浮层卡片 ---------- */
+  .popover{
+    position:absolute;
+    left:288px;top:96px;
+    width:340px;
+    padding:6px;
+    border-radius:16px;
+    background:var(--card-bg);
+    border:1px solid var(--hairline);
+    box-shadow:var(--card-shadow);
+    z-index:5;
+  }
+
+  .pop-search{
+    height:32px;padding:0 8px;
+    display:flex;align-items:center;gap:6px;
+    border-radius:10px;
+    background:var(--search-bg);
+  }
+  .pop-search .ico{width:14px;height:14px;flex-basis:14px;color:var(--text-mute)}
+  .pop-input{
+    flex:1 1 auto;min-width:0;
+    height:100%;padding:0;
+    background:none;border:0;outline:none;
+    font:inherit;font-size:12.5px;color:var(--text);
+  }
+  .pop-input::placeholder{color:var(--text-dim)}
+  .pop-input:focus-visible{outline:none}
+  .pop-search:focus-within{box-shadow:inset 0 0 0 1px var(--accent)}
+  .kbd{
+    flex:0 0 auto;
+    font-family:var(--mono);font-size:11px;line-height:1;
+    color:var(--text-mute);letter-spacing:.02em;
+    padding-top:1px;
+  }
+
+  .pop-group{
+    font-size:11px;font-weight:600;line-height:16px;
+    letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-mute);
+    margin:8px 0 4px;
+    padding:0 9px;
+  }
+  .pop-list{display:flex;flex-direction:column;gap:2px}
+
+  .pop-item{
+    position:relative;
+    width:100%;height:36px;padding:0 9px;
+    display:flex;align-items:center;gap:8px;
+    border-radius:12px;
+    font-size:14px;color:var(--text);
+    transition:background .16s ease,color .16s ease;
+  }
+  .pop-item .ico{color:var(--text-dim)}
+  .pop-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pop-item:hover{background:var(--row-hover)}
+
+  .pop-item.is-selected{
+    background:var(--accent-soft);
+    color:var(--accent-ink);
+    font-weight:600;
+  }
+  .pop-item.is-selected .ico{color:var(--accent)}
+  .pop-item.is-selected::before{
+    content:"";position:absolute;left:0;top:50%;
+    width:2px;height:16px;border-radius:2px;
+    transform:translateY(-50%);
+    background:var(--accent);
+  }
+  .pop-item.is-selected:hover{background:var(--accent-soft-hover)}
+
+  /* ---------- 规格说明 ---------- */
+  .spec{
+    max-width:1400px;margin:36px auto 0;
+    padding:24px;
+    border-radius:16px;
+    background:var(--frame-bg);
+    border:1px solid var(--frame-border);
+  }
+  .spec h2{font-size:15px;font-weight:600;letter-spacing:.01em}
+  .spec > p.lead{margin-top:6px;font-size:13px;color:var(--text-mute)}
+  .spec-grid{
+    margin-top:20px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;
+  }
+  .spec-card h3{
+    font-size:11px;font-weight:600;line-height:16px;
+    letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-mute);
+    margin-bottom:12px;
+  }
+  .spec-list{display:flex;flex-direction:column;gap:12px;counter-reset:s}
+  .spec-list li{
+    counter-increment:s;
+    display:grid;grid-template-columns:20px 1fr;gap:8px;
+    font-size:13.5px;line-height:1.7;color:var(--text-dim);
+  }
+  .spec-list li::before{
+    content:counter(s);
+    font-family:var(--mono);font-size:11px;line-height:20px;
+    color:var(--text-mute);
+  }
+  .spec-list b{display:block;color:var(--text);font-weight:600;font-size:13.5px}
+  .spec-list span{display:block}
+
+  .spec-dims{display:flex;flex-direction:column;gap:0}
+  .spec-dims > div{
+    display:grid;grid-template-columns:78px 1fr;gap:12px;
+    padding:8px 0;
+    border-bottom:1px solid var(--hairline-soft);
+    font-size:13px;line-height:1.6;
+  }
+  .spec-dims > div:last-child{border-bottom:0}
+  .spec-dims dt{color:var(--text-mute);font-size:12.5px}
+  .spec-dims dd{color:var(--text-dim);font-variant-numeric:tabular-nums}
+  .spec-note{
+    margin-top:16px;padding-top:14px;
+    border-top:1px solid var(--hairline-soft);
+    font-size:12.5px;line-height:1.7;color:var(--text-mute);
+  }
+  .spec code{
+    font-family:var(--mono);font-size:11.5px;
+    padding:1px 5px;border-radius:5px;
+    background:var(--search-bg);color:var(--text-dim);
+  }
+
+  @media (max-width:720px){
+    body{padding:20px 14px 40px}
+    .spec{padding:18px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5 12 12l9-4.5L12 3Z"/><path d="m3 12.5 9 4.5 9-4.5"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24">
+      <path d="M12 5.4a3 3 0 0 0-5.7 1.2A3 3 0 0 0 5 11.8a3 3 0 0 0 1.7 5.3 3 3 0 0 0 5.3 1.4"/>
+      <path d="M12 5.4a3 3 0 0 1 5.7 1.2A3 3 0 0 1 19 11.8a3 3 0 0 1-1.7 5.3 3 3 0 0 1-5.3 1.4"/>
+      <path d="M12 5.4v13"/>
+    </symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24">
+      <path d="M10 4.8a2 2 0 0 1 4 0v.9h2.3A1.7 1.7 0 0 1 18 7.4v2.3h.9a2 2 0 0 1 0 4H18v2.3a1.7 1.7 0 0 1-1.7 1.7H14v.9a2 2 0 0 1-4 0v-.9H7.7A1.7 1.7 0 0 1 6 16v-2.3h-.9a2 2 0 0 1 0-4H6V7.4A1.7 1.7 0 0 1 7.7 5.7H10v-.9Z"/>
+    </symbol>
+    <symbol id="i-store" viewBox="0 0 24 24">
+      <path d="M4 9.2h16"/>
+      <path d="M5.6 9.2V6.6A1.6 1.6 0 0 1 7.2 5h9.6a1.6 1.6 0 0 1 1.6 1.6v2.6"/>
+      <path d="M6.2 9.2v9.2A1.6 1.6 0 0 0 7.8 20h8.4a1.6 1.6 0 0 0 1.6-1.6V9.2"/>
+      <path d="M10 20v-4.6h4V20"/>
+    </symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.4 3 5.6 13.2h5.7l-1 7.8 8-10.4h-5.7l.8-7.6Z"/></symbol>
+    <symbol id="i-blocks" viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="7" height="7" rx="2"/>
+      <rect x="13.5" y="3.5" width="7" height="7" rx="2"/>
+      <rect x="3.5" y="13.5" width="7" height="7" rx="2"/>
+      <rect x="13.5" y="13.5" width="7" height="7" rx="2"/>
+    </symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24">
+      <path d="M2.6 12S6.1 6.6 12 6.6 21.4 12 21.4 12 17.9 17.4 12 17.4 2.6 12 2.6 12Z"/>
+      <circle cx="12" cy="12" r="2.6"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M4.6 7h14.8"/>
+      <path d="M9.6 7V5.6A1.6 1.6 0 0 1 11.2 4h1.6a1.6 1.6 0 0 1 1.6 1.6V7"/>
+      <path d="m6.6 7 .8 11.1a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5L17.4 7"/>
+      <path d="M10.6 11v5M13.4 11v5"/>
+    </symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.6"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.4"/>
+      <path d="M3.6 12h16.8"/>
+      <path d="M12 3.6c2.4 2.4 3.7 5.3 3.7 8.4s-1.3 6-3.7 8.4c-2.4-2.4-3.7-5.3-3.7-8.4S9.6 6 12 3.6Z"/>
+    </symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m5.5 8 4 4-4 4"/><path d="M13 16h5.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.4A8.4 8.4 0 0 1 9.6 4a8.6 8.6 0 1 0 10.4 10.4Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4.2"/>
+      <path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M18.5 5.5l-1.4 1.4M6.9 17.1l-1.4 1.4"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="stage-head">
+  <div>
+    <h1>DSH 左栏 · 集合（方向 B）</h1>
+    <p>集合行收起与悬浮展开两种状态，卡片自 x=288 起浮在内容区之上。</p>
+  </div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="true">
+    <svg class="ico" aria-hidden="true"><use href="#i-moon"/></svg>
+    <span>暗色</span>
+  </button>
+</header>
+
+<main class="frames">
+
+  <!-- ============ 状态一：收起 ============ -->
+  <section class="frame" aria-labelledby="f1">
+    <h2 class="frame-title" id="f1"><span class="dot"></span>收起</h2>
+    <div class="device">
+      <aside class="sidebar" aria-label="左侧栏">
+        <div class="brand">
+          <span class="brand-mark">deepseek</span>
+          <span class="brand-sub">Harness</span>
+        </div>
+
+        <button class="new-btn" type="button">
+          <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
+          <span>新会话</span>
+        </button>
+
+        <nav class="panel-list" aria-label="面板">
+          <button class="row row--collection" type="button" aria-haspopup="dialog" aria-expanded="false">
+            <span class="row-label">集合</span>
+            <span class="badge">7</span>
+            <span class="slash" aria-hidden="true">/</span>
+            <svg class="ico ico--sel" aria-hidden="true"><use href="#i-layers"/></svg>
+            <span class="row-value">Horon 记忆</span>
+            <svg class="ico chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+          </button>
+        </nav>
+
+        <div class="section">
+          <h3 class="section-title">工作区</h3>
+          <ul class="ws-list">
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>dsh-horon</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>story</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>autoloop-console</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>flow-runner</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>agent-autoloop</span></button></li>
+          </ul>
+          <button class="row row--ghost" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
+            <span>新会话</span>
+          </button>
+        </div>
+
+        <div class="sidebar-foot">
+          <button class="row row--foot" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg>
+            <span>Remote</span>
+            <span class="foot-tag">已连接</span>
+          </button>
+          <button class="row row--foot" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-more"/></svg>
+            <span>更多</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <div class="app-topline">
+          <span>dsh-horon</span>
+          <span class="app-crumb-sep">/</span>
+          <span class="app-crumb-dim">会话</span>
+        </div>
+        <div class="app-placeholder"><span>会话内容区</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 状态二：悬浮展开 ============ -->
+  <section class="frame" aria-labelledby="f2">
+    <h2 class="frame-title" id="f2"><span class="dot dot--on"></span>悬浮展开</h2>
+    <div class="device">
+      <aside class="sidebar" aria-label="左侧栏">
+        <div class="brand">
+          <span class="brand-mark">deepseek</span>
+          <span class="brand-sub">Harness</span>
+        </div>
+
+        <button class="new-btn" type="button">
+          <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
+          <span>新会话</span>
+        </button>
+
+        <nav class="panel-list" aria-label="面板">
+          <button class="row row--collection is-open" type="button" aria-haspopup="dialog" aria-expanded="true">
+            <span class="row-label">集合</span>
+            <span class="badge">7</span>
+            <span class="slash" aria-hidden="true">/</span>
+            <svg class="ico ico--sel" aria-hidden="true"><use href="#i-layers"/></svg>
+            <span class="row-value">Horon 记忆</span>
+            <svg class="ico chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+          </button>
+        </nav>
+
+        <div class="section">
+          <h3 class="section-title">工作区</h3>
+          <ul class="ws-list">
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>dsh-horon</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>story</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>autoloop-console</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>flow-runner</span></button></li>
+            <li><button class="row row--ws" type="button"><svg class="ico" aria-hidden="true"><use href="#i-terminal"/></svg><span>agent-autoloop</span></button></li>
+          </ul>
+          <button class="row row--ghost" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
+            <span>新会话</span>
+          </button>
+        </div>
+
+        <div class="sidebar-foot">
+          <button class="row row--foot" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg>
+            <span>Remote</span>
+            <span class="foot-tag">已连接</span>
+          </button>
+          <button class="row row--foot" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-more"/></svg>
+            <span>更多</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <div class="app-topline">
+          <span>dsh-horon</span>
+          <span class="app-crumb-sep">/</span>
+          <span class="app-crumb-dim">会话</span>
+        </div>
+        <div class="app-placeholder"><span>会话内容区</span></div>
+      </div>
+
+      <div class="popover" role="dialog" aria-label="集合菜单">
+        <div class="pop-search">
+          <svg class="ico" aria-hidden="true"><use href="#i-search"/></svg>
+          <input class="pop-input" type="search" placeholder="搜索菜单…" aria-label="搜索菜单">
+          <kbd class="kbd">⌘K</kbd>
+        </div>
+
+        <p class="pop-group">面板</p>
+        <ul class="pop-list">
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg><span>插件</span></button></li>
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-store"/></svg><span>插件市场</span></button></li>
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg><span>自动化任务</span></button></li>
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-blocks"/></svg><span>架构建模</span></button></li>
+          <li><button class="pop-item is-selected" type="button" aria-current="true"><svg class="ico" aria-hidden="true"><use href="#i-brain"/></svg><span>Horon 记忆</span></button></li>
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg><span>上下文洞察</span></button></li>
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span>Purge</span></button></li>
+        </ul>
+
+        <p class="pop-group">工具</p>
+        <ul class="pop-list">
+          <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg><span>更多</span></button></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<section class="spec" aria-labelledby="spec-title">
+  <h2 id="spec-title">方向 B · 用法与尺寸</h2>
+  <p class="lead">集合行是入口，菜单是浮层：选中项回到行上，行本身只占 36px。</p>
+
+  <div class="spec-grid">
+    <div class="spec-card">
+      <h3>三句话</h3>
+      <ol class="spec-list">
+        <li>
+          <b>什么时候最好用</b>
+          <span>菜单项多、日常只用一个、又不想让左栏常驻一长串入口时——浮层只在需要时升起，选完即走，左栏始终安静。</span>
+        </li>
+        <li>
+          <b>代价</b>
+          <span>多一层浮层：要处理定位、遮挡、点外部关闭和焦点回填；行右侧得留出「这里可以展开」的暗示，否则用户不知道有菜单。</span>
+        </li>
+        <li>
+          <b>什么时候会后悔</b>
+          <span>当需要同时看完多个集合、或需要键盘高频繁切换时——浮层遮住正文、每次都要开关一次，反而不如常驻侧栏或分栏直给。</span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="spec-card">
+      <h3>关键尺寸</h3>
+      <dl class="spec-dims">
+        <div><dt>集合行</dt><dd>高 36 · 圆角 12 · 内边距 7/9 · 图标 16 · 间距 6 · 字号 14</dd></div>
+        <div><dt>徽标</dt><dd>高 16 · 最小宽 16 · 圆角 6 · 底 #ffffff14 · 字号 11 · 行高 16</dd></div>
+        <div><dt>斜杠</dt><dd>#adb2b8 · 两侧各 6px（由 6px 行内间距给出）</dd></div>
+        <div><dt>卡片</dt><dd>宽 340 · 圆角 16 · 内边距 6 · 底 #29292e · 描边 rgba(255,255,255,.16)</dd></div>
+        <div><dt>搜索框</dt><dd>高 32 · 圆角 10 · 底 #ffffff0f · 占位 12.5px · ⌘K 11px</dd></div>
+        <div><dt>分组标题</dt><dd>11 / 行高 16 / 600 / #81858c / 上间距 8 / 下间距 4</dd></div>
+        <div><dt>卡片项</dt><dd>高 36 · 圆角 12 · 图标 16 · 字号 14 · hover #ffffff14</dd></div>
+        <div><dt>选中态</dt><dd>左侧 2×16 强调条 #7aaaff · 整行底 #7aaaff14 · 名称 600</dd></div>
+        <div><dt>侧栏</dt><dd>宽 280 · 底 #1b1b1c · 应用底 #151517 · 卡片左缘 x=288</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <p class="spec-note">
+    右侧开关只做暗/亮切换：暗色即上表原值，亮色把同一组尺寸下的底色与描边换成对应亮色（卡片 <code>#ffffff</code>、选中强调保留同一蓝）。所有颜色、圆角、行高都收在 <code>:root</code> 变量里，改一处即可整体换肤。
+  </p>
+</section>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var light = root.getAttribute('data-theme') === 'light';
+      var next = light ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      btn.setAttribute('aria-pressed', String(!light));
+      btn.querySelector('span').textContent = light ? '暗色' : '亮色';
+      var use = btn.querySelector('use');
+      if (use) use.setAttribute('href', light ? '#i-moon' : '#i-sun');
+    });
+  })();
+</script>
+
+</body>
+</html>

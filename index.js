@@ -2,8 +2,10 @@
  * @zhujiuyi/dsh-leftpanel — host half.
  *
  * A standard DSH plugin: named exports `name` / `apply`, no Config, no
- * dependencies. It owns exactly one job: remember which left-sidebar panel
- * entries the user has hidden, and hand that list to the browser half.
+ * dependencies. It owns exactly two jobs, both about the left sidebar's shape:
+ * remember which panel entries the user has hidden, and remember whether the
+ * "集合" (collection) mode is on plus which entry it currently shows. Both are
+ * handed to the browser half through one document.
  *
  * Why a host half at all: the sidebar row list is composed in the browser, but
  * the hidden set has to survive a reload and be readable before the first row
@@ -35,6 +37,16 @@ export const STATE_PATH = '/api/left-panel/state'
 
 /** Shape version of the persisted document. */
 export const STATE_VERSION = 1
+
+/**
+ * Default of the collection setting.
+ *
+ * Collection mode is what a fresh install gets: the panel rows collapse into a
+ * single "集合" row, so a new profile starts quiet instead of showing every
+ * plugin entry it happens to have loaded. It is a presentation choice only —
+ * switching it off restores the plain row list, and nothing is unregistered.
+ */
+export const COLLECTION_DEFAULT = Object.freeze({ enabled: true, selectedId: null })
 
 /**
  * @param {import('@deepseek-ai/cordis').Context} ctx
@@ -89,7 +101,13 @@ async function handleState(request, store, ctx) {
     } catch {
       return jsonResponse({ error: 'unreadable-body' }, 400)
     }
-    return jsonResponse(await store.write(normalizeHidden(payload?.hidden)))
+    const current = await store.read()
+    return jsonResponse(
+      await store.write(
+        payload?.hidden === undefined ? current.hidden : normalizeHidden(payload.hidden),
+        payload?.collection === undefined ? current.collection : normalizeCollection(payload.collection),
+      ),
+    )
   } catch (error) {
     warn(ctx, `state request failed: ${messageOf(error)}`)
     return jsonResponse({ error: 'state-failed', hidden: [] }, 200)
@@ -104,34 +122,49 @@ async function handleState(request, store, ctx) {
  * fresh write, and each write lands atomically (temp file + rename) so a crash
  * mid-write cannot leave a truncated document behind.
  * @param {{ homeDir: string, logger: { warn: (message: string) => void } }} options
- * @returns {{ read: () => Promise<{ version: number, hidden: string[] }>, write: (hidden: string[]) => Promise<{ version: number, hidden: string[] }> }}
+ * @returns {{ read: () => Promise<{ version: number, hidden: string[], collection: { enabled: boolean, selectedId: string | null } }>, write: (hidden: string[], collection?: { enabled: boolean, selectedId: string | null }) => Promise<{ version: number, hidden: string[], collection: { enabled: boolean, selectedId: string | null } }> }}
  */
 export function createStateStore({ homeDir, logger }) {
   const file = join(homeDir, 'left-panel.json')
-  /** @type {{ version: number, hidden: string[] } | undefined} */
+  /** @type {{ version: number, hidden: string[], collection: { enabled: boolean, selectedId: string | null } } | undefined} */
   let cache
   /** @type {Promise<unknown>} */
   let chain = Promise.resolve()
 
-  /** @returns {Promise<{ version: number, hidden: string[] }>} */
+  /** @returns {Promise<{ version: number, hidden: string[], collection: { enabled: boolean, selectedId: string | null } }>} */
   async function load() {
     if (cache !== undefined) return cache
     try {
       const parsed = JSON.parse(await readFile(file, 'utf8'))
-      cache = { version: STATE_VERSION, hidden: normalizeHidden(parsed?.hidden) }
+      cache = {
+        version: STATE_VERSION,
+        hidden: normalizeHidden(parsed?.hidden),
+        // A file written before collection mode existed has no `collection`
+        // key; it reads as the default rather than as "off".
+        collection: normalizeCollection(parsed?.collection),
+      }
     } catch (error) {
       // A missing file is the normal first run; a broken one is data, not a
       // transport failure — start clean and say so once in the log.
       if (error?.code !== 'ENOENT') logger.warn(`ignoring unreadable state file: ${messageOf(error)}`)
-      cache = { version: STATE_VERSION, hidden: [] }
+      cache = { version: STATE_VERSION, hidden: [], collection: { ...COLLECTION_DEFAULT } }
     }
     return cache
   }
 
   return {
     read: load,
-    write(hidden) {
-      const next = { version: STATE_VERSION, hidden: normalizeHidden(hidden) }
+    write(hidden, collection) {
+      const next = {
+        version: STATE_VERSION,
+        hidden: normalizeHidden(hidden),
+        // A hidden-only write must not reset the collection setting: an omitted
+        // field means "leave it as it is", not "restore the default".
+        collection:
+          collection === undefined
+            ? (cache?.collection ?? { ...COLLECTION_DEFAULT })
+            : normalizeCollection(collection),
+      }
       chain = chain.then(async () => {
         cache = next
         await mkdir(dirname(file), { recursive: true })
@@ -163,6 +196,25 @@ export function normalizeHidden(value) {
     ids.add(id)
   }
   return [...ids].sort()
+}
+
+/**
+ * Coerce anything into the collection setting.
+ *
+ * `enabled` defaults to on: a document that never carried the key (every file
+ * written before this feature existed) must behave like a fresh install, not
+ * like a user who turned it off. A `selectedId` that is not a clean slot id is
+ * dropped rather than repaired, so a hand-edited file cannot make the row
+ * render something arbitrary.
+ * @param {unknown} value
+ * @returns {{ enabled: boolean, selectedId: string | null }}
+ */
+export function normalizeCollection(value) {
+  const source = value !== null && typeof value === 'object' ? value : {}
+  const enabled = source.enabled === undefined ? COLLECTION_DEFAULT.enabled : source.enabled === true
+  const raw = typeof source.selectedId === 'string' ? source.selectedId.trim() : ''
+  const selectedId = raw === '' || raw.length > 120 || /\s/.test(raw) ? null : raw
+  return { enabled, selectedId }
 }
 
 /**

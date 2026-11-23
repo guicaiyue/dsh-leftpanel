@@ -257,6 +257,13 @@ test('the stylesheet defines the hide rule and injects it once', () => {
   const css = run.styles[0].textContent
   assert.match(css, /\[data-dsh-leftpanel-hidden\]\s*\{\s*display:\s*none !important/, 'the hide rule is what hides a row')
   assert.match(css, /\.lp-root\b/, 'the page has its own style root')
+  // Collection mode adds a row and a card to the sidebar; both must be styled
+  // by this bundle (no remote sheet) and the row must not be hidden by the
+  // same rule that folds the panel rows.
+  assert.match(css, /\[data-dsh-leftpanel-collection\]/, 'the injected row has its own hook')
+  assert.match(css, /\.lp-coll\b/, 'the injected row is styled here')
+  assert.match(css, /\[data-dsh-leftpanel-card\]|\.lp-card\b/, 'the card is styled here')
+  assert.match(css, /\.lp-card-cols\b/, 'the card lays its two columns out here')
   // No remote asset may be pulled in by a plugin stylesheet.
   assert.doesNotMatch(css, /@import/)
   assert.doesNotMatch(css, /url\(\s*['"]?https?:/)
@@ -417,4 +424,87 @@ test('the Cordis patch inserts exactly this bundle', async () => {
   assert.match(patch, /insert:/)
   assert.match(patch, new RegExp(`name:\\s*"${PACKAGE_NAME}"`))
   assert.match(patch, /id:\s*left-panel/)
+})
+
+test('the collection setting is persisted and defaults to on', async () => {
+  const { mkdtemp, rm, readFile } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'left-panel-collection-'))
+  try {
+    assert.deepEqual(HOST.normalizeCollection(undefined), { enabled: true, selectedId: null }, 'a missing key means on')
+    assert.deepEqual(HOST.normalizeCollection({ enabled: false, selectedId: 'plugins' }), { enabled: false, selectedId: 'plugins' })
+    assert.deepEqual(HOST.normalizeCollection({ selectedId: 'has space' }), { enabled: true, selectedId: null }, 'bad ids are dropped, not repaired')
+
+    const store = HOST.createStateStore({ homeDir: dir, logger: { warn: () => {} } })
+    assert.deepEqual((await store.read()).collection, { enabled: true, selectedId: null }, 'first run starts on')
+
+    // A hidden-only write must not reset the collection setting.
+    await store.write(['plugins'])
+    await store.write(['plugins'], { enabled: false, selectedId: 'plugins' })
+    await store.write(['plugins', 'schedules'])
+    const onDisk = JSON.parse(await readFile(join(dir, 'left-panel.json'), 'utf8'))
+    assert.deepEqual(onDisk.collection, { enabled: false, selectedId: 'plugins' }, 'the collection setting survives a hidden-set write')
+
+    // A document written before the feature existed reads as on.
+    await import('node:fs/promises').then(({ writeFile }) => writeFile(join(dir, 'left-panel.json'), JSON.stringify({ version: 1, hidden: ['plugins'] }), 'utf8'))
+    const reopened = HOST.createStateStore({ homeDir: dir, logger: { warn: () => {} } })
+    assert.deepEqual((await reopened.read()).collection, { enabled: true, selectedId: null }, 'an old file means "on"')
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('a POST may update one half of the document without touching the other', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'left-panel-patch-'))
+  try {
+    /** @type {any} */
+    let handler
+    const ctx = {
+      inject(names, callback) {
+        callback({
+          connection: {
+            fetch: {
+              register(route) {
+                handler = route.fetch
+                return () => {}
+              },
+            },
+          },
+        })
+      },
+      effect(factory) {
+        const dispose = factory()
+        return typeof dispose === 'function' ? dispose : () => {}
+      },
+      logger: { warn: () => {} },
+      // Point the store at the temp home through the env the host half reads.
+      env: { DSH_HOME: dir },
+    }
+    const previous = process.env.DSH_HOME
+    process.env.DSH_HOME = dir
+    try {
+      HOST.apply(ctx)
+      assert.equal(typeof handler, 'function')
+
+      const post = (body) => handler(new Request('http://local' + HOST.STATE_PATH, { method: 'POST', body: JSON.stringify(body) }))
+      await post({ collection: { enabled: true, selectedId: 'plugins' } })
+      let doc = await (await handler(new Request('http://local' + HOST.STATE_PATH, { method: 'GET' }))).json()
+      assert.deepEqual(doc.collection, { enabled: true, selectedId: 'plugins' })
+      assert.deepEqual(doc.hidden, [])
+
+      await post({ hidden: ['schedules'] })
+      doc = await (await handler(new Request('http://local' + HOST.STATE_PATH, { method: 'GET' }))).json()
+      assert.deepEqual(doc.hidden, ['schedules'], 'the hidden set moved')
+      assert.deepEqual(doc.collection, { enabled: true, selectedId: 'plugins' }, 'and the collection setting stayed put')
+    } finally {
+      if (previous === undefined) delete process.env.DSH_HOME
+      else process.env.DSH_HOME = previous
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 })

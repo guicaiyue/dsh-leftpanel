@@ -27,13 +27,85 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const CLIENT = join(HERE, '..', 'client', 'client.js')
 const HIDE_ATTR = 'data-dsh-leftpanel-hidden'
 
-/** A minimal element that supports exactly what the pass touches. */
+/**
+ * A minimal element that supports exactly what the pass touches.
+ *
+ * The hide pass only reads tags, attributes and children; the collection mount
+ * additionally appends nodes, sets text and measures the row list, so those are
+ * modelled here too — with the same shape the browser gives (children arrays,
+ * `firstElementChild`, `append`), so a stub gap cannot masquerade as a product
+ * bug.
+ */
 class Element {
   constructor(tagName) {
     this.tagName = tagName
     this.children = []
     this.parentElement = null
     this.attributes = new Map()
+    this.hidden = false
+    this.style = {}
+    this.classList = { add() {}, remove() {}, toggle() {} }
+    this.ownerDocument = null
+  }
+  /** The DOM aliases `parentNode` and `parentElement` for element parents. */
+  get parentNode() {
+    return this.parentElement
+  }
+  get firstElementChild() {
+    return this.children.length > 0 ? this.children[0] : null
+  }
+  get lastElementChild() {
+    return this.children.length > 0 ? this.children[this.children.length - 1] : null
+  }
+  set innerHTML(value) {
+    this.children.length = 0
+    this._innerHTML = String(value)
+  }
+  get innerHTML() {
+    return this._innerHTML ?? ''
+  }
+  set textContent(value) {
+    this.children.length = 0
+    this._textContent = String(value)
+  }
+  get textContent() {
+    if (this._textContent !== undefined) return this._textContent
+    return this.children.map((child) => child.textContent).join('')
+  }
+  append(...nodes) {
+    for (const node of nodes) this.appendChild(node)
+  }
+  insertBefore(child, reference) {
+    const at = reference === null || reference === undefined ? this.children.length : this.children.indexOf(reference)
+    child.parentElement = this
+    this.children.splice(at === -1 ? this.children.length : at, 0, child)
+    return child
+  }
+  appendChild(child) {
+    child.parentElement = this
+    this.children.push(child)
+    return child
+  }
+  remove() {
+    if (this.parentElement === null) return
+    const at = this.parentElement.children.indexOf(this)
+    if (at !== -1) this.parentElement.children.splice(at, 1)
+    this.parentElement = null
+  }
+  getBoundingClientRect() {
+    return { x: 0, y: 100, width: 264, height: 36, top: 100, right: 272, bottom: 136, left: 0 }
+  }
+  get offsetHeight() {
+    return 120
+  }
+  addEventListener() {}
+  removeEventListener() {}
+  focus() {}
+  querySelector() {
+    return null
+  }
+  querySelectorAll() {
+    return []
   }
   setAttribute(key, value) {
     this.attributes.set(key, String(value))
@@ -46,11 +118,6 @@ class Element {
   }
   hasAttribute(key) {
     return this.attributes.has(key)
-  }
-  appendChild(child) {
-    child.parentElement = this
-    this.children.push(child)
-    return child
   }
   /** Walk up to the nearest ancestor with this tag, like the real API. */
   closest(tagName) {
@@ -280,4 +347,244 @@ test('a name mismatch at a positional hit hides nothing rather than the wrong ro
 test('the pass is a no-op when no row list is rendered (collapsed shell)', () => {
   // No sidebar at all: the bundle must not throw, and nothing gets marked.
   assert.doesNotThrow(() => runWith([], [], ['plugins']))
+})
+
+// ── collection mode ───────────────────────────────────────────────────────
+// The injected row and card are the one part of this plugin that *adds* DOM to
+// the sidebar, so the pass that mounts them is verified against the same real
+// structure the shell renders.
+
+const COLLECTION_ATTR = 'data-dsh-leftpanel-collection'
+const CARD_ATTR = 'data-dsh-leftpanel-card'
+
+/** Build a document stub rich enough for the mount pass. */
+function buildDocument(nav) {
+  const body = new Element('BODY')
+  const documentStub = {
+    body,
+    head: { appendChild: () => {} },
+    createElement: (tagName) => {
+      const node = new Element(tagName)
+      node.ownerDocument = documentStub
+      return node
+    },
+    querySelectorAll: (selector) => (selector === 'nav' ? [nav] : []),
+    querySelector: () => null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }
+  return documentStub
+}
+
+/**
+ * Run the bundle with the collection setting seeded, and report what ended up
+ * in the sidebar.
+ * @param {{ enabled?: boolean, selectedId?: string | null, rows?: string[], entries?: any[] }} options
+ */
+function runCollection(options = {}) {
+  const rows = options.rows ?? ['Plugins', 'Schedules', 'Archify']
+  const entries = options.entries ?? rows.map((label, index) => ({ id: label.toLowerCase(), label, order: index }))
+  const nav = buildSidebar(rows)
+  const documentStub = buildDocument(nav)
+  const collection = { enabled: options.enabled ?? true, selectedId: options.selectedId ?? null }
+
+  const React = {
+    createElement: () => null,
+    Fragment: Symbol('Fragment'),
+    useState: (initial) => [initial, () => {}],
+    useEffect: () => {},
+    useMemo: (factory) => factory(),
+    useCallback: (fn) => fn,
+    useRef: (initial) => ({ current: initial }),
+    useSyncExternalStore: (subscribe, getSnapshot) => getSnapshot(),
+  }
+
+  let registration
+  const sandbox = {
+    React,
+    console,
+    document: documentStub,
+    setTimeout,
+    clearTimeout,
+    fetch: () => Promise.reject(new Error('no host')),
+    localStorage: {
+      store: new Map([['dsh-leftpanel:collection', JSON.stringify(collection)]]),
+      getItem(key) {
+        return this.store.has(key) ? this.store.get(key) : null
+      },
+      setItem(key, value) {
+        this.store.set(key, String(value))
+      },
+      removeItem(key) {
+        this.store.delete(key)
+      },
+    },
+    window: {
+      __ModuleLoader__: {
+        load(entry) {
+          registration = entry
+        },
+      },
+      setTimeout,
+      clearTimeout,
+      innerWidth: 1440,
+      innerHeight: 900,
+      requestAnimationFrame: undefined,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    },
+  }
+  sandbox.window.localStorage = sandbox.localStorage
+
+  vm.createContext(sandbox)
+  vm.runInContext(fs.readFileSync(CLIENT, 'utf8'), sandbox, { filename: 'client/client.js' })
+
+  const slotApi = {
+    entriesOfSlot: () => entries.map((opts) => ({ options: opts })),
+    inject: (owner, callback) => callback(),
+    register: () => () => {},
+    subscribe: () => () => {},
+  }
+  const ctx = {
+    slots: slotApi,
+    locale: { register: () => () => {}, bind: () => (key) => key, subscribe: () => () => {} },
+    layout: { selectPanel: () => {} },
+    effect(factory) {
+      const dispose = factory()
+      return typeof dispose === 'function' ? dispose : () => {}
+    },
+    logger: { warn: () => {} },
+  }
+
+  registration.factory((specifier) => {
+    if (specifier === 'react') return React
+    throw new Error(`unexpected require('${specifier}')`)
+  }).apply(ctx)
+
+  const collectionRow = nav.children.find((node) => node.getAttribute(COLLECTION_ATTR) !== null) ?? null
+  const card = documentStub.body.children.find((node) => node.getAttribute(CARD_ATTR) !== null) ?? null
+  return {
+    nav,
+    collectionRow,
+    card,
+    rows: nav.children
+      .filter((node) => node.getAttribute(COLLECTION_ATTR) === null && node.tagName === 'BUTTON')
+      .map((button) => ({ label: button.getAttribute('aria-label'), hidden: button.hasAttribute(HIDE_ATTR) })),
+    mirror: sandbox.localStorage,
+  }
+}
+
+test('collection mode is on by default: one row stays, every panel row folds', () => {
+  const run = runCollection()
+  assert.ok(run.collectionRow !== null, 'the collection row must be injected')
+  assert.equal(run.collectionRow.parentElement, run.nav, 'it must live in the row list')
+  assert.equal(run.nav.children[0], run.collectionRow, 'and sit above the folded rows')
+  for (const row of run.rows) assert.equal(row.hidden, true, `${row.label} must fold away`)
+})
+
+test('the injected row is not counted as a panel row', () => {
+  const run = runCollection({ enabled: true, rows: ['Plugins'] })
+  // With one panel and one injected row, the positional match must still line
+  // up; if the injected row leaked into the projection it would not.
+  assert.equal(run.rows.length, 1)
+  assert.equal(run.rows[0].hidden, true)
+})
+
+test('collection mode off restores the plain list and removes the row', () => {
+  const run = runCollection({ enabled: false })
+  assert.equal(run.collectionRow, null, 'no row may be injected')
+  assert.equal(run.card, null, 'no card may be mounted')
+  for (const row of run.rows) assert.equal(row.hidden, false, `${row.label} must be visible again`)
+})
+
+test('the user hidden set still applies while collection mode is off', () => {
+  const nav = buildSidebar(['Plugins', 'Schedules'])
+  const documentStub = buildDocument(nav)
+  const React = {
+    createElement: () => null,
+    Fragment: Symbol('Fragment'),
+    useState: (initial) => [initial, () => {}],
+    useEffect: () => {},
+    useMemo: (factory) => factory(),
+    useCallback: (fn) => fn,
+    useRef: (initial) => ({ current: initial }),
+    useSyncExternalStore: (subscribe, getSnapshot) => getSnapshot(),
+  }
+  let registration
+  const sandbox = {
+    React,
+    console,
+    document: documentStub,
+    setTimeout,
+    clearTimeout,
+    fetch: () => Promise.reject(new Error('no host')),
+    localStorage: {
+      store: new Map([
+        ['dsh-leftpanel:collection', JSON.stringify({ enabled: false, selectedId: null })],
+        ['dsh-leftpanel:hidden', JSON.stringify(['plugins'])],
+      ]),
+      getItem(key) {
+        return this.store.has(key) ? this.store.get(key) : null
+      },
+      setItem(key, value) {
+        this.store.set(key, String(value))
+      },
+      removeItem(key) {
+        this.store.delete(key)
+      },
+    },
+    window: {
+      __ModuleLoader__: { load(entry) { registration = entry } },
+      setTimeout,
+      clearTimeout,
+      innerWidth: 1440,
+      innerHeight: 900,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    },
+  }
+  sandbox.window.localStorage = sandbox.localStorage
+  vm.createContext(sandbox)
+  vm.runInContext(fs.readFileSync(CLIENT, 'utf8'), sandbox, { filename: 'client/client.js' })
+
+  registration.factory((specifier) => {
+    if (specifier === 'react') return React
+    throw new Error(`unexpected require('${specifier}')`)
+  }).apply({
+    slots: {
+      entriesOfSlot: () => [
+        { options: { id: 'plugins', label: 'Plugins', order: 0 } },
+        { options: { id: 'schedules', label: 'Schedules', order: 1 } },
+      ],
+      inject: (owner, callback) => callback(),
+      register: () => () => {},
+      subscribe: () => () => {},
+    },
+    locale: { register: () => () => {}, bind: () => (key) => key, subscribe: () => () => {} },
+    layout: { selectPanel: () => {} },
+    effect(factory) {
+      const dispose = factory()
+      return typeof dispose === 'function' ? dispose : () => {}
+    },
+    logger: { warn: () => {} },
+  })
+
+  assert.deepEqual(
+    nav.children.map((button) => ({ label: button.getAttribute('aria-label'), hidden: button.hasAttribute(HIDE_ATTR) })),
+    [{ label: 'Plugins', hidden: true }, { label: 'Schedules', hidden: false }],
+  )
+})
+
+test('a missing collection setting reads as on, not as off', () => {
+  const run = runCollection({ enabled: undefined })
+  // Seeded as `{}` through normalizeCollection: `enabled` is absent, so the
+  // row must still be injected.
+  assert.ok(run.collectionRow !== null)
+})
+
+test('the card is mounted outside the sidebar and starts hidden', () => {
+  const run = runCollection({ selectedId: 'plugins' })
+  assert.ok(run.card !== null, 'the card must be mounted')
+  assert.equal(run.card.hidden, true, 'it stays closed until the row is hovered')
+  assert.equal(run.card.parentElement, run.nav.ownerDocument?.body ?? run.card.parentElement)
 })

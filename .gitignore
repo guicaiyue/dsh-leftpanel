@@ -6,3 +6,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 .tmp/
+
+# OpenDesign 把项目挂进本仓库后写的产物（od-import 补）
+.open-design/
+*.artifact.json
+.od-frames/
+.od-skills/
+preview.html
