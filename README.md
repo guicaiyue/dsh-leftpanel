@@ -36,12 +36,12 @@
 
 ![设置](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-settings.png?v=1)
 
-设计稿（含明暗两套与三帧状态）在 `mock/`，出题依据与实测令牌在 `docs/proto/collection-brief.md`。
-注意 `mock/` 是**当时的候选稿**：定稿把「更多」的条目并进了同一张卡片、没有分隔线也不分组，
-这几处与稿子不同，以本 README 和真机截图为准。
+设计稿在 `mock/`：`collection-final.html` 是**定稿**（与实现一致），`index.html` 是索引页，
+`collection-A/B/C.html` 是早期的三个候选方向（保留作对照，已被定稿取代）。
+出题依据与实测令牌在 `docs/proto/collection-brief.md`（那份是当时的出题稿，顶部有差异说明）。
 
 ```bash
-node scripts/shot.mjs mock/collection-B2.html out.png 1500 1000
+node scripts/shot.mjs mock/collection-final.html out.png 1500 1000
 ```
 
 ## 安装
