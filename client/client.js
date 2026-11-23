@@ -211,6 +211,17 @@ window.__ModuleLoader__.load({
 			'.lp-coll:hover,.lp-coll[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover)}',
 			'.lp-coll:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
 			'.lp-coll-glyph{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px}',
+			// Collapsed rail: the shell gives each row a 36px square, so the row
+			// keeps only its glyph and every text part steps out of the way.
+			'.lp-coll[data-collapsed="true"]{width:36px;justify-content:center;padding:0;gap:0}',
+			'.lp-coll[data-collapsed="true"] .lp-coll-label,'
+			+ '.lp-coll[data-collapsed="true"] .lp-coll-badge,'
+			+ '.lp-coll[data-collapsed="true"] .lp-coll-slash,'
+			+ '.lp-coll[data-collapsed="true"] .lp-coll-item,'
+			+ '.lp-coll[data-collapsed="true"] .lp-coll-chev{display:none}',
+			// The selected entry keeps a presence in the rail as a corner mark.
+			'.lp-coll[data-collapsed="true"]{position:relative}',
+			'.lp-coll[data-collapsed="true"][data-has-selection="true"]::after{content:"";position:absolute;right:4px;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-state-business-primary)}',
 			'.lp-coll-label{flex:0 0 auto;white-space:nowrap}',
 			'.lp-coll-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:16px;padding:0 4px;border-radius:6px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 8%,transparent);color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;font-variant-numeric:tabular-nums}',
 			'.lp-coll-slash{flex:0 0 auto;color:var(--dsw-alias-label-tertiary);margin:0 0}',
@@ -1164,6 +1175,7 @@ window.__ModuleLoader__.load({
 					// its glyph and the selected entry's icon becomes a corner mark.
 					const narrow = rowList.getBoundingClientRect().width < 120
 					collectionRow.setAttribute('data-collapsed', narrow ? 'true' : 'false')
+					collectionRow.setAttribute('data-has-selection', selectedPanel() === null ? 'false' : 'true')
 					if (signature !== collectionSignature) {
 						collectionSignature = signature
 						fillCard(items)
@@ -1536,7 +1548,10 @@ window.__ModuleLoader__.load({
 						else window.setTimeout(run, 32)
 					}
 					const ensure = () => {
-						if (hidden.length === 0) {
+						// Collection mode hides rows too, and its `hidden` set is the
+						// user's own list (usually empty) — gating on that alone would
+						// leave the observer detached while every row is folded.
+						if (hidden.length === 0 && collection.enabled !== true) {
 							if (observer !== null) {
 								observer.disconnect()
 								observer = null
@@ -1547,7 +1562,12 @@ window.__ModuleLoader__.load({
 						observer = new MutationObserver(schedule)
 						observer.observe(document.body, { childList: true, subtree: true })
 					}
-					const off = view.subscribe(ensure)
+					// Every state change may flip whether the observer is needed, and
+					// the rail width may have changed with it.
+					const off = view.subscribe(() => {
+						ensure()
+						schedule()
+					})
 					ensure()
 					schedule()
 					return () => {

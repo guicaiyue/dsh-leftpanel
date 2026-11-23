@@ -649,3 +649,20 @@ test('the card deals rows across the two columns, not column by column', () => {
   assert.match(clientSource, /function splitColumns\(items\)[\s\S]{0,400}index % 2 === 0/, 'the deal is row-major')
   assert.doesNotMatch(clientSource, /const half = Math\.ceil\(items\.length \/ 2\)/, 'column-major dealing is gone')
 })
+
+test('the collapsed rail shows only the glyph and marks the selection', () => {
+  const css = fs.readFileSync(CLIENT, 'utf8')
+  // The shell shrinks each row to a 36px square when the sidebar collapses.
+  // Without these rules the row's text overflows a 36px track, which is what
+  // the rail looked like before this was pinned.
+  assert.match(css, /\.lp-coll\[data-collapsed="true"\]\{width:36px/, 'the row becomes a square')
+  assert.match(css, /\.lp-coll\[data-collapsed="true"\] \.lp-coll-label/, 'the text steps out of the way')
+  assert.match(css, /data-has-selection="true"\]::after/, 'a selected entry keeps a corner mark')
+})
+
+test('the row observer stays attached while collection mode is on', () => {
+  const src = fs.readFileSync(CLIENT, 'utf8')
+  // Collection mode folds rows with an empty user `hidden` set; gating the
+  // observer on `hidden.length` alone left it detached and the rail stale.
+  assert.match(src, /hidden\.length === 0 && collection\.enabled !== true/, 'collection mode keeps the observer on')
+})
