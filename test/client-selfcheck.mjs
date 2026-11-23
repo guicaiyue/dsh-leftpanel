@@ -262,8 +262,12 @@ test('the stylesheet defines the hide rule and injects it once', () => {
   // same rule that folds the panel rows.
   assert.match(css, /\[data-dsh-leftpanel-collection\]/, 'the injected row has its own hook')
   assert.match(css, /\.lp-coll\b/, 'the injected row is styled here')
-  assert.match(css, /\[data-dsh-leftpanel-card\]|\.lp-card\b/, 'the card is styled here')
-  assert.match(css, /\.lp-card-cols\b/, 'the card lays its two columns out here')
+  assert.match(css, /\.lp-fly\b/, 'the floating card is styled here')
+  assert.match(css, /\.lp-fly-cols\b/, 'the card lays its two columns out here')
+  // The settings page already owns `.lp-card`; the floating menus must not
+  // reuse it, or a `position:fixed` rule lands on the settings cards.
+  assert.match(css, /\.lp-card\{border/, 'the settings card keeps its own rule')
+  assert.doesNotMatch(css, /\.lp-card\{[^}]*position:fixed/, 'the settings card must never become a flyout')
   // No remote asset may be pulled in by a plugin stylesheet.
   assert.doesNotMatch(css, /@import/)
   assert.doesNotMatch(css, /url\(\s*['"]?https?:/)

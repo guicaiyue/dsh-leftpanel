@@ -104,7 +104,7 @@ window.__ModuleLoader__.load({
 			collectionOn: '已开启',
 			collectionOff: '已关闭',
 			collectionNav: '集合',
-			collectionKeysMove: '↑↓ 选择 · ←→ 换列 · 更多 →',
+			collectionKeysMove: '↑↓ 选择 · ←→ 换列',
 			collectionKeysOpen: 'Enter 打开 · Esc 关闭',
 			collectionMore: '更多',
 			collectionMoreHint: '插件市场与创建插件',
@@ -144,7 +144,7 @@ window.__ModuleLoader__.load({
 			collectionOn: 'On',
 			collectionOff: 'Off',
 			collectionNav: 'Collection',
-			collectionKeysMove: '↑↓ select · ←→ column · More →',
+			collectionKeysMove: '↑↓ select · ←→ column',
 			collectionKeysOpen: 'Enter open · Esc close',
 			collectionMore: 'More',
 			collectionMoreHint: 'Plugin market and creating plugins',
@@ -224,27 +224,25 @@ window.__ModuleLoader__.load({
 			'.lp-coll-chev{flex:0 0 auto;margin-left:auto;color:var(--dsw-alias-label-tertiary);display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;transition:color .15s ease}',
 			'.lp-coll:hover .lp-coll-chev,.lp-coll[aria-expanded="true"] .lp-coll-chev{color:var(--dsw-alias-label-secondary)}',
 
-			'.lp-card{position:fixed;z-index:2147483000;box-sizing:border-box;padding:6px;border-radius:var(--dsw-radius-lg,16px);background:var(--dsw-alias-bg-layer-2);border:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);box-shadow:0 3px 8px rgba(0,0,0,.04),0 0 20px rgba(0,0,0,.05);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px}',
-			'.lp-card[hidden]{display:none}',
-			'.lp-card-cols{display:grid;grid-template-columns:1fr 1fr;position:relative}',
-			'.lp-card-cols::before{content:"";position:absolute;left:50%;top:8px;bottom:8px;width:1px;background:var(--dsw-alias-border-l2);transform:translateX(-.5px)}',
-			'.lp-card-col{display:flex;flex-direction:column;gap:2px;min-width:0;padding:0 2px}',
-			'.lp-card-item{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 9px;border:0;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .14s ease,color .14s ease}',
-			'.lp-card-item:hover,.lp-card-item[data-focus="true"]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
-			'.lp-card-item:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
-			'.lp-card-item-glyph{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-label-tertiary)}',
-			'.lp-card-item-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.lp-card-item[data-selected="true"]{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-label-primary);font-weight:600}',
-			'.lp-card-item[data-selected="true"] .lp-card-item-glyph{color:var(--dsw-alias-state-business-primary)}',
-			'.lp-card-item[data-selected="true"]::before{content:"";position:absolute;left:0;top:50%;width:2px;height:16px;border-radius:2px;transform:translateY(-50%);background:var(--dsw-alias-state-business-primary)}',
-			'.lp-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 10px 3px;border-top:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:11.5px;line-height:16px}',
-			'.lp-card-divider{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l2)}',
-			'.lp-card-item[data-role="more"] .lp-card-item-glyph{color:var(--dsw-alias-label-tertiary)}',
-			'.lp-card-item-chev{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-label-tertiary)}',
-			'.lp-subcard{position:fixed;z-index:2147483001;box-sizing:border-box;padding:4px;border-radius:var(--dsw-radius-lg,16px);background:var(--dsw-alias-bg-layer-2);border:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);box-shadow:0 3px 8px rgba(0,0,0,.04),0 0 20px rgba(0,0,0,.05);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px;min-width:200px}',
-			'.lp-subcard[hidden]{display:none}',
-			'.lp-card-foot kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:0 4px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 6%,transparent);color:var(--dsw-alias-label-secondary)}',
-			'@media (prefers-reduced-motion:reduce){.lp-coll,.lp-coll-chev,.lp-card-item{transition:none}}',
+			'.lp-fly{position:fixed;z-index:2147483000;box-sizing:border-box;padding:6px;border-radius:var(--dsw-radius-lg,16px);background:var(--dsw-alias-bg-layer-2);border:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);box-shadow:0 3px 8px rgba(0,0,0,.04),0 0 20px rgba(0,0,0,.05);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px}',
+			'.lp-fly[hidden]{display:none}',
+			'.lp-fly-cols{display:grid;grid-template-columns:1fr 1fr;position:relative}',
+			'.lp-fly-cols::before{content:"";position:absolute;left:50%;top:8px;bottom:8px;width:1px;background:var(--dsw-alias-border-l2);transform:translateX(-.5px)}',
+			'.lp-fly-col{display:flex;flex-direction:column;gap:2px;min-width:0;padding:0 2px}',
+			'.lp-fly-item{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 9px;border:0;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .14s ease,color .14s ease}',
+			'.lp-fly-item:hover,.lp-fly-item[data-focus="true"]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
+			'.lp-fly-item:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
+			'.lp-fly-item-glyph{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-label-tertiary)}',
+			'.lp-fly-item-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.lp-fly-item[data-selected="true"]{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-label-primary);font-weight:600}',
+			'.lp-fly-item[data-selected="true"] .lp-fly-item-glyph{color:var(--dsw-alias-state-business-primary)}',
+			'.lp-fly-item[data-selected="true"]::before{content:"";position:absolute;left:0;top:50%;width:2px;height:16px;border-radius:2px;transform:translateY(-50%);background:var(--dsw-alias-state-business-primary)}',
+			'.lp-fly-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 10px 3px;border-top:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:11.5px;line-height:16px}',
+			'.lp-fly-divider{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l2)}',
+			'.lp-fly-extras{display:flex;flex-direction:column;gap:2px;padding:0 2px}',
+			'.lp-fly-item[data-role="more"] .lp-fly-item-glyph{color:var(--dsw-alias-label-tertiary)}',
+			'.lp-fly-foot kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:0 4px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 6%,transparent);color:var(--dsw-alias-label-secondary)}',
+			'@media (prefers-reduced-motion:reduce){.lp-coll,.lp-coll-chev,.lp-fly-item{transition:none}}',
 
 			'.lp-empty{padding:20px 14px;text-align:center;color:var(--dsw-alias-label-tertiary);font-size:12.5px}',
 			'.lp-note{margin-top:22px;padding:13px 14px;border-radius:var(--dsw-radius-lg,14px);border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font-size:12.5px}',
@@ -562,9 +560,6 @@ window.__ModuleLoader__.load({
 				/** Document-level "click outside closes the card" listener. */
 				/** @type {any} */
 				let outsideListener = null
-				/** The nested card behind the card's "更多" row. */
-				/** @type {any} */
-				let subCard = null
 				/** Entries harvested from the shell's own overflow menu. */
 				let moreEntries = []
 				/** True once the harvest has succeeded at least once. */
@@ -744,69 +739,26 @@ window.__ModuleLoader__.load({
 					else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 				}
 
-				/** Build (once) the nested card behind the "更多" row. */
-				function buildSubCard() {
-					const card = document.createElement('div')
-					card.className = 'lp-subcard'
-					card.setAttribute(SUB_ATTR, '')
-					card.setAttribute('role', 'menu')
-					card.hidden = true
-					return card
-				}
-
-				/** Paint the nested card from the harvested entries. */
-				function fillSubCard() {
-					if (subCard === null) return
-					subCard.textContent = ''
-					for (const entry of moreEntries) {
-						const button = document.createElement('button')
-						button.type = 'button'
-						button.className = 'lp-card-item'
-						button.setAttribute('data-more-label', entry.label)
-						const glyph = document.createElement('span')
-						glyph.className = 'lp-card-item-glyph'
-						glyph.setAttribute('aria-hidden', 'true')
-						glyph.innerHTML = entry.glyph
-						const name = document.createElement('span')
-						name.className = 'lp-card-item-name'
-						name.textContent = entry.label
-						button.append(glyph, name)
-						subCard.append(button)
-					}
-				}
-
-				/** Place the nested card to the right of its trigger row. */
-				function placeSubCard(trigger) {
-					if (subCard === null || trigger === null) return
-					const rect = trigger.getBoundingClientRect()
-					const height = subCard.offsetHeight
-					const width = subCard.offsetWidth
-					const top = Math.max(8, Math.min(rect.top, window.innerHeight - height - 8))
-					const left = Math.min(rect.right + 4, window.innerWidth - width - 8)
-					subCard.style.left = Math.max(8, left) + 'px'
-					subCard.style.top = top + 'px'
-				}
-
 				/** Build (once) the floating card. */
 				function buildCard() {
 					const card = document.createElement('div')
-					card.className = 'lp-card'
+					card.className = 'lp-fly'
 					card.setAttribute(CARD_ATTR, '')
 					card.setAttribute('role', 'dialog')
 					card.hidden = true
 
 					const cols = document.createElement('div')
-					cols.className = 'lp-card-cols'
+					cols.className = 'lp-fly-cols'
 					const left = document.createElement('div')
-					left.className = 'lp-card-col'
+					left.className = 'lp-fly-col'
 					left.setAttribute('data-column', '0')
 					const right = document.createElement('div')
-					right.className = 'lp-card-col'
+					right.className = 'lp-fly-col'
 					right.setAttribute('data-column', '1')
 					cols.append(left, right)
 
 					const foot = document.createElement('div')
-					foot.className = 'lp-card-foot'
+					foot.className = 'lp-fly-foot'
 					const hintMove = document.createElement('span')
 					hintMove.setAttribute('data-role', 'hint-move')
 					const hintOpen = document.createElement('span')
@@ -851,8 +803,8 @@ window.__ModuleLoader__.load({
 				function fillCard(items) {
 					if (collectionCard === null) return
 					const tFn = t
-					// A repaint must not stack dividers and "更多" rows.
-					for (const stale of [...collectionCard.querySelectorAll('.lp-card-divider, [data-role="more"]')]) stale.remove()
+					// A repaint must not stack the overflow rows.
+					for (const stale of [...collectionCard.querySelectorAll('.lp-fly-divider, [data-more-label]')]) stale.remove()
 					const [left, right] = splitColumns(items)
 					const columns = [left, right]
 					const cols = collectionCard.firstElementChild
@@ -862,53 +814,49 @@ window.__ModuleLoader__.load({
 						for (const item of columns[column]) {
 							const button = document.createElement('button')
 							button.type = 'button'
-							button.className = 'lp-card-item'
+							button.className = 'lp-fly-item'
 							button.setAttribute('data-id', item.id)
 							button.setAttribute('data-column', String(column))
 							if (item.id === collection.selectedId) button.setAttribute('data-selected', 'true')
 							button.setAttribute('aria-current', item.id === collection.selectedId ? 'true' : 'false')
 							const glyph = document.createElement('span')
-							glyph.className = 'lp-card-item-glyph'
+							glyph.className = 'lp-fly-item-glyph'
 							glyph.setAttribute('aria-hidden', 'true')
 							glyph.innerHTML = item.glyph ?? ''
 							const name = document.createElement('span')
-							name.className = 'lp-card-item-name'
+							name.className = 'lp-fly-item-name'
 							name.textContent = item.label
 							button.append(glyph, name)
 							host.append(button)
 						}
 					}
-					// The shell's overflow entries ride in the same card as a second
-					// layer: a divider, then one row that opens a nested card. They are
-					// not panel entries, so they never join the two columns.
+					// The shell's overflow entries are ordinary rows in the same card —
+					// one layer, not a popup on a popup. They are actions rather than
+					// panels, so they get a divider above and no selection state.
 					if (moreEntries.length > 0) {
 						const divider = document.createElement('div')
-						divider.className = 'lp-card-divider'
-						const moreRow = document.createElement('button')
-						moreRow.type = 'button'
-						moreRow.className = 'lp-card-item'
-						moreRow.setAttribute('data-role', 'more')
-						moreRow.setAttribute('aria-haspopup', 'menu')
-						moreRow.setAttribute('aria-expanded', 'false')
-						const moreGlyph = document.createElement('span')
-						moreGlyph.className = 'lp-card-item-glyph'
-						moreGlyph.setAttribute('aria-hidden', 'true')
-						moreGlyph.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
-							+ '<circle cx="3.2" cy="3.2" r="1.05" fill="currentColor"/><circle cx="8" cy="3.2" r="1.05" fill="currentColor"/><circle cx="12.8" cy="3.2" r="1.05" fill="currentColor"/>'
-							+ '<circle cx="3.2" cy="8" r="1.05" fill="currentColor"/><circle cx="8" cy="8" r="1.05" fill="currentColor"/><circle cx="12.8" cy="8" r="1.05" fill="currentColor"/>'
-							+ '<circle cx="3.2" cy="12.8" r="1.05" fill="currentColor"/><circle cx="8" cy="12.8" r="1.05" fill="currentColor"/><circle cx="12.8" cy="12.8" r="1.05" fill="currentColor"/>'
-							+ '</svg>'
-						const moreName = document.createElement('span')
-						moreName.className = 'lp-card-item-name'
-						moreName.textContent = tFn('collectionMore')
-						const moreChev = document.createElement('span')
-						moreChev.className = 'lp-card-item-chev'
-						moreChev.setAttribute('aria-hidden', 'true')
-						moreChev.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
-							+ '<path d="M6.4 4.4 10 8l-3.6 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-						moreRow.append(moreGlyph, moreName, moreChev)
+						divider.className = 'lp-fly-divider'
+						const wrap = document.createElement('div')
+						wrap.className = 'lp-fly-extras'
+						wrap.setAttribute('role', 'group')
+						wrap.setAttribute('aria-label', tFn('collectionMore'))
+						for (const entry of moreEntries) {
+							const button = document.createElement('button')
+							button.type = 'button'
+							button.className = 'lp-fly-item'
+							button.setAttribute('data-more-label', entry.label)
+							const glyph = document.createElement('span')
+							glyph.className = 'lp-fly-item-glyph'
+							glyph.setAttribute('aria-hidden', 'true')
+							glyph.innerHTML = entry.glyph
+							const name = document.createElement('span')
+							name.className = 'lp-fly-item-name'
+							name.textContent = entry.label
+							button.append(glyph, name)
+							wrap.append(button)
+						}
 						cols.after(divider)
-						divider.after(moreRow)
+						divider.after(wrap)
 					}
 					const foot = collectionCard.lastElementChild
 					const move = foot.querySelector('[data-role="hint-move"]')
@@ -972,14 +920,9 @@ window.__ModuleLoader__.load({
 					if (open && collection.enabled !== true) return
 					collectionRow.setAttribute('aria-expanded', open ? 'true' : 'false')
 					collectionCard.hidden = !open
-					// The nested card belongs to the card: it may never outlive it.
-					if (!open && subCard !== null) {
-						subCard.hidden = true
-						for (const row of collectionCard.querySelectorAll('[data-role="more"]')) row.setAttribute('aria-expanded', 'false')
-					}
 					if (open) {
 						placeCard()
-						const first = collectionCard.querySelector('.lp-card-item')
+						const first = collectionCard.querySelector('.lp-fly-item')
 						if (first !== null) {
 							cardFocus = { ring: 0 }
 							markFocus()
@@ -988,15 +931,20 @@ window.__ModuleLoader__.load({
 				}
 
 				/** Apply the keyboard highlight to the card items. */
+				/** The card's rows in reading order: left column, right column, extras. */
+				function cardRing() {
+					if (collectionCard === null) return []
+					const items = [...collectionCard.querySelectorAll('.lp-fly-item')]
+					const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
+					const extras = items.filter((item) => item.getAttribute('data-more-label') !== null)
+					return [...columns[0], ...columns[1], ...extras]
+				}
+
 				function markFocus() {
 					if (collectionCard === null) return
-					const items = [...collectionCard.querySelectorAll('.lp-card-item')]
-					const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
-					const moreRow = collectionCard.querySelector('[data-role="more"]')
-					const ring = [...columns[0], ...columns[1]]
-					if (moreRow !== null) ring.push(moreRow)
+					const ring = cardRing()
 					const target = ring[cardFocus.ring]
-					for (const item of items) {
+					for (const item of collectionCard.querySelectorAll('.lp-fly-item')) {
 						if (item === target) item.setAttribute('data-focus', 'true')
 						else item.removeAttribute('data-focus')
 					}
@@ -1079,7 +1027,7 @@ window.__ModuleLoader__.load({
 						if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
 							event.preventDefault()
 							open()
-							const first = collectionCard.querySelector('.lp-card-item')
+							const first = collectionCard.querySelector('.lp-fly-item')
 							if (first !== null) first.focus()
 						}
 					})
@@ -1092,62 +1040,32 @@ window.__ModuleLoader__.load({
 						closeNow()
 					}
 					document.addEventListener('pointerdown', outsideListener, true)
-					const openSub = (trigger) => {
-						if (subCard === null || moreEntries.length === 0) return
-						fillSubCard()
-						subCard.hidden = false
-						trigger.setAttribute('aria-expanded', 'true')
-						placeSubCard(trigger)
-					}
-					const closeSub = () => {
-						if (subCard === null) return
-						subCard.hidden = true
-						for (const row of collectionCard.querySelectorAll('[data-role="more"]')) row.setAttribute('aria-expanded', 'false')
-					}
-					collectionCard.addEventListener('pointerover', (event) => {
-						const more = event.target.closest?.('[data-role="more"]')
-						if (more !== null && more !== undefined) openSub(more)
-					})
 					collectionCard.addEventListener('click', (event) => {
-						const more = event.target.closest?.('[data-role="more"]')
-						if (more !== null && more !== undefined) {
-							openSub(more)
+						const button = event.target.closest?.('.lp-fly-item')
+						if (button === null || button === undefined) return
+						// The shell's overflow entries are actions, not panels: they run
+						// their real menu item instead of selecting a panel.
+						const moreLabel = button.getAttribute('data-more-label')
+						if (moreLabel !== null) {
+							setCardOpen(false)
+							void activateMoreEntry(moreLabel)
 							return
 						}
-						const button = event.target.closest?.('.lp-card-item')
-						if (button === null || button === undefined) return
 						const id = button.getAttribute('data-id')
 						if (id !== null) chooseEntry(id)
 					})
-					subCard?.addEventListener('click', (event) => {
-						const button = event.target.closest?.('[data-more-label]')
-						if (button === null || button === undefined) return
-						const label = button.getAttribute('data-more-label')
-						closeSub()
-						setCardOpen(false)
-						if (label !== null) void activateMoreEntry(label)
-					})
-					// Keyboard model: the two columns are one vertical ring, and the
-					// "更多" row is the last stop on that ring — a row that only the
-					// pointer can reach is not reachable.
+					// Keyboard: one ring over every row in the card, in reading order
+					// (left column top-down, right column, then the overflow rows).
 					collectionCard.addEventListener('keydown', (event) => {
-						const items = [...collectionCard.querySelectorAll('.lp-card-item')]
+						const items = [...collectionCard.querySelectorAll('.lp-fly-item')]
 						if (items.length === 0) return
 						const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
-						const moreRow = collectionCard.querySelector('[data-role="more"]')
-						// Column-major order: left column top-down, then right column.
-						const ring = [...columns[0], ...columns[1]]
-						if (moreRow !== null) ring.push(moreRow)
+						const ring = cardRing()
 						if (ring.length === 0) return
 						const currentAt = ring.findIndex((node) => node.getAttribute('data-focus') === 'true')
 
 						if (event.key === 'Escape') {
 							event.preventDefault()
-							if (subCard !== null && subCard.hidden === false) {
-								closeSub()
-								markFocus()
-								return
-							}
 							closeNow()
 							collectionRow.focus()
 							return
@@ -1159,28 +1077,21 @@ window.__ModuleLoader__.load({
 							cardFocus.ring = (from + step + ring.length) % ring.length
 						} else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
 							event.preventDefault()
-							// Left/right moves between the two columns at the same row index;
-							// from the "更多" row it goes back up into the right column.
 							const active = ring[currentAt]
-							if (active !== undefined && active.getAttribute('data-role') === 'more') {
-								cardFocus.ring = columns[1].length - 1
-							} else {
-								const column = active === undefined ? 0 : Number(active.getAttribute('data-column') ?? 0)
-								const index = active === undefined ? 0 : columns[column].indexOf(active)
-								const nextColumn = column === 0 ? 1 : 0
-								if (columns[nextColumn].length === 0) return
-								const target = columns[nextColumn][Math.min(index, columns[nextColumn].length - 1)]
-								cardFocus.ring = ring.indexOf(target)
-							}
+							const column = active === undefined ? 0 : Number(active.getAttribute('data-column') ?? 0)
+							const index = active === undefined ? 0 : columns[column].indexOf(active)
+							const nextColumn = column === 0 ? 1 : 0
+							if (columns[nextColumn].length === 0) return
+							const target = columns[nextColumn][Math.min(Math.max(index, 0), columns[nextColumn].length - 1)]
+							cardFocus.ring = ring.indexOf(target)
 						} else if (event.key === 'Enter' || event.key === ' ') {
 							event.preventDefault()
 							const active = ring[currentAt === -1 ? 0 : currentAt]
 							if (active === undefined) return
-							if (active.getAttribute('data-role') === 'more') {
-								openSub(active)
-								markFocus()
-								const first = subCard?.querySelector('.lp-card-item')
-								first?.focus()
+							const moreLabel = active.getAttribute('data-more-label')
+							if (moreLabel !== null) {
+								setCardOpen(false)
+								void activateMoreEntry(moreLabel)
 								return
 							}
 							const id = active.getAttribute('data-id')
@@ -1192,34 +1103,6 @@ window.__ModuleLoader__.load({
 						markFocus()
 						ring[cardFocus.ring]?.focus()
 					})
-					// Inside the nested card: arrows walk it, Enter activates, Esc returns.
-					subCard?.addEventListener('keydown', (event) => {
-						const rows = [...subCard.querySelectorAll('[data-more-label]')]
-						if (rows.length === 0) return
-						const at = rows.findIndex((row) => row === document.activeElement)
-						if (event.key === 'Escape') {
-							event.preventDefault()
-							closeSub()
-							markFocus()
-							collectionCard.querySelector('[data-role="more"]')?.focus()
-							return
-						}
-						if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-							event.preventDefault()
-							const step = event.key === 'ArrowDown' ? 1 : -1
-							const next = ((at === -1 ? 0 : at) + step + rows.length) % rows.length
-							rows[next].focus()
-							return
-						}
-						if (event.key === 'Enter' || event.key === ' ') {
-							event.preventDefault()
-							const row = rows[at === -1 ? 0 : at]
-							const label = row?.getAttribute('data-more-label')
-							closeSub()
-							setCardOpen(false)
-							if (label !== null && label !== undefined) void activateMoreEntry(label)
-						}
-					})
 				}
 
 				/** Remove the injected row and card, if they exist. */
@@ -1228,8 +1111,6 @@ window.__ModuleLoader__.load({
 					if (launcher !== null) launcher.wrapper.removeAttribute(MORE_HIDE_ATTR)
 					if (collectionRow !== null) collectionRow.remove()
 					if (collectionCard !== null) collectionCard.remove()
-					if (subCard !== null) subCard.remove()
-					subCard = null
 					if (outsideListener !== null) {
 						document.removeEventListener('pointerdown', outsideListener, true)
 						outsideListener = null
@@ -1262,9 +1143,8 @@ window.__ModuleLoader__.load({
 					}
 					if (collectionCard === null) {
 						collectionCard = buildCard()
-						subCard = buildSubCard()
 						wireCollection()
-						document.body.append(collectionCard, subCard)
+						document.body.append(collectionCard)
 					}
 					// The shell's overflow launcher folds in here too; its entries become
 					// the card's second layer, so nothing is lost by hiding the row.

@@ -631,3 +631,13 @@ test('turning the mode off puts the overflow launcher back', () => {
   runCollection({ enabled: false, rows: ['Plugins'], nav })
   assert.equal(launcher.hasAttribute('data-dsh-leftpanel-more-hidden'), false, 'nothing stays folded')
 })
+
+test('the settings page keeps its own card rule (no flyout leak)', () => {
+  // `.lp-card` belongs to the settings page. If the floating menus reuse that
+  // name, a `position:fixed` rule lands on the settings cards and they stack on
+  // top of each other — which is exactly the bug this pins.
+  const css = fs.readFileSync(join(HERE, '..', 'client', 'client.js'), 'utf8')
+  assert.match(css, /'\.lp-card\{border:1px solid/, 'the settings card rule stays')
+  assert.doesNotMatch(css, /'\.lp-card\{[^']*position:fixed/, 'the settings card is never fixed')
+  assert.match(css, /'\.lp-fly\{position:fixed/, 'the floating card owns the fixed positioning')
+})
