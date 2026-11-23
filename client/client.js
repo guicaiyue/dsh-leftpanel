@@ -36,7 +36,7 @@
  */
 
 window.__ModuleLoader__.load({
-	id: 'dsh-leftpanel',
+	id: '@xirizhi/dsh-leftpanel',
 	factory(require) {
 		'use strict'
 

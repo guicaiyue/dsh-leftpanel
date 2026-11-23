@@ -48,7 +48,7 @@ node scripts/shot.mjs mock/collection-B2.html out.png 1500 1000
 
 ```bash
 # npm（推荐）
-dsh plugin --profile web add dsh-leftpanel
+dsh plugin --profile web add @xirizhi/dsh-leftpanel
 
 # 或直接用 GitHub Release 上的 tarball
 dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
@@ -61,7 +61,7 @@ dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases
 {
   "dsh": {
     "profile": {
-      "bundles": ["dsh-leftpanel"]
+      "bundles": ["@xirizhi/dsh-leftpanel"]
     }
   }
 }
@@ -158,7 +158,7 @@ git tag vX.Y.Z && git push origin main --tags
 ```
 
 workflow 会：跑 `npm run verify` → 校验标签与版本一致 → `npm pack` → 建 GitHub Release 并挂
-`dsh-leftpanel-<version>.tgz` + 稳定别名 `dsh-leftpanel.tgz` + `SHA256SUMS.txt` → 若仓库配了
+`xirizhi-dsh-leftpanel-<version>.tgz` + 稳定别名 `dsh-leftpanel.tgz` + `SHA256SUMS.txt` → 若仓库配了
 `NPM_TOKEN` secret 就发 npm（幂等，已存在则跳过）→ 自检稳定下载地址是 200。
 
 **改了能力描述或截图**，发版后还要更新插件市场条目：

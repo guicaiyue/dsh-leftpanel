@@ -5,5 +5,5 @@
 # GET/POST /api/left-panel/state to the browser half. It declares no Config.
 - insert:
     - id: left-panel
-      name: "dsh-leftpanel"
+      name: "@xirizhi/dsh-leftpanel"
       config: {}

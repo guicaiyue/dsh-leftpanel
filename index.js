@@ -27,7 +27,7 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
 /** Package name; also the client module id and the Loader row's plugin name. */
-export const name = 'dsh-leftpanel'
+export const name = '@xirizhi/dsh-leftpanel'
 
 /** The plugin runs without optional services; `connection` is injected locally. */
 export const inject = []

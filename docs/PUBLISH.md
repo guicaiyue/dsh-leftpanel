@@ -10,13 +10,13 @@
 
 | 项 | 值 |
 |---|---|
-| 包名 | `dsh-leftpanel` |
+| 包名 | `@xirizhi/dsh-leftpanel` |
 | 发布账号 | npm 用户 `xirizhi` |
 | token | `~/.npmrc` 里那条 `//registry.npmjs.org/:_authToken=...`（granular，`bypass_2fa=true`） |
-| 已发布版本 | 见 <https://www.npmjs.com/package/dsh-leftpanel> |
+| 已发布版本 | 见 <https://www.npmjs.com/package/@xirizhi/dsh-leftpanel> |
 
 **为什么改名。** 原作者的包是 `@zhujiuyi/dsh-leftpanel`（0.1.0，2026-10 发布），
-那个 scope 只有原作者能发。本仓库用不带 scope 的 `dsh-leftpanel`，与同系列插件
+那个 scope 只有原作者能发。本仓库用不带 scope 的 `@xirizhi/dsh-leftpanel`，与同系列插件
 `dsh-context-domains` 保持一致。
 
 ## 1. 首次发布
@@ -25,7 +25,7 @@
 cd dsh-leftpanel
 npm run verify                                        # 必须绿
 npm publish --access public --registry=https://registry.npmjs.org
-npm view dsh-leftpanel version --registry=https://registry.npmjs.org
+npm view @xirizhi/dsh-leftpanel version --registry=https://registry.npmjs.org
 ```
 
 `prepublishOnly` 没配，所以**发版前自己跑一遍 verify**（CI 里是强制的）。

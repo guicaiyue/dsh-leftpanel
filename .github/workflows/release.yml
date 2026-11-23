@@ -69,7 +69,7 @@ jobs:
             exit 1
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tarball=dsh-leftpanel-${VERSION}.tgz" >> "$GITHUB_OUTPUT"
+          echo "tarball=xirizhi-dsh-leftpanel-${VERSION}.tgz" >> "$GITHUB_OUTPUT"
 
       - name: Pack
         run: npm pack --pack-destination "$RUNNER_TEMP"
@@ -81,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.meta.outputs.version }}"
-          cp "$RUNNER_TEMP/dsh-leftpanel-${VERSION}.tgz" "$RUNNER_TEMP/dsh-leftpanel.tgz"
+          cp "$RUNNER_TEMP/xirizhi-dsh-leftpanel-${VERSION}.tgz" "$RUNNER_TEMP/dsh-leftpanel.tgz"
           ls -la "$RUNNER_TEMP"/*.tgz
           sha256sum "$RUNNER_TEMP"/*.tgz | tee "$RUNNER_TEMP/SHA256SUMS.txt"
 
@@ -97,7 +97,7 @@ jobs:
             gh release create "$TAG" --title "dsh-leftpanel ${{ steps.meta.outputs.version }}" --generate-notes
           fi
           gh release upload "$TAG" \
-            "$RUNNER_TEMP/dsh-leftpanel-${{ steps.meta.outputs.version }}.tgz" \
+            "$RUNNER_TEMP/xirizhi-dsh-leftpanel-${{ steps.meta.outputs.version }}.tgz" \
             "$RUNNER_TEMP/dsh-leftpanel.tgz" \
             "$RUNNER_TEMP/SHA256SUMS.txt" \
             --clobber

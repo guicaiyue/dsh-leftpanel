@@ -25,7 +25,7 @@ import vm from 'node:vm'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 const CLIENT = join(ROOT, 'client', 'client.js')
-const PACKAGE_NAME = 'dsh-leftpanel'
+const PACKAGE_NAME = '@xirizhi/dsh-leftpanel'
 const SECTION_ID = 'left-panel'
 const NS = 'leftPanel'
 const SLOT = 'sidebar.panellist'

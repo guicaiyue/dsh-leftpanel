@@ -78,7 +78,7 @@ Adds `guicaiyue/dsh-leftpanel` — folds every left-sidebar panel entry into a s
 - The first click never navigates: with nothing selected the row only reveals the card. Picking an entry selects it and opens that panel exactly like its own row would; the row then reads "Collection / [icon] name" and clicking it goes straight there.
 - Keyboard walks the visual order; collapsing the sidebar to a 36px rail leaves only the collection glyph. A switch in Settings → Left menu turns the whole mode off and restores the plain row list.
 - Declares `dsh.bundle.patch` (`cordis.patch.yml`) and installs with `dsh plugin add`.
-- Published on npm as `dsh-leftpanel`; a prebuilt tarball is also on every GitHub Release at https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
+- Published on npm as `@xirizhi/dsh-leftpanel`; a prebuilt tarball is also on every GitHub Release at https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
 - Repo has the `dsh-plugin` topic; screenshots and the tile icon are declared in the repo (`screenshots.json`, `assets/`).
 BODY
 fi
