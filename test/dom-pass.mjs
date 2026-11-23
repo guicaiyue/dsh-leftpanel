@@ -641,3 +641,11 @@ test('the settings page keeps its own card rule (no flyout leak)', () => {
   assert.doesNotMatch(css, /'\.lp-card\{[^']*position:fixed/, 'the settings card is never fixed')
   assert.match(css, /'\.lp-fly\{position:fixed/, 'the floating card owns the fixed positioning')
 })
+
+test('the card deals rows across the two columns, not column by column', () => {
+  // Overflow entries are the last rows of one list. Dealing column-major would
+  // stack them in the second column, which reads as a group of their own.
+  const clientSource = fs.readFileSync(CLIENT, 'utf8')
+  assert.match(clientSource, /function splitColumns\(items\)[\s\S]{0,400}index % 2 === 0/, 'the deal is row-major')
+  assert.doesNotMatch(clientSource, /const half = Math\.ceil\(items\.length \/ 2\)/, 'column-major dealing is gone')
+})

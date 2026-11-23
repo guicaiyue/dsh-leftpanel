@@ -106,8 +106,6 @@ window.__ModuleLoader__.load({
 			collectionNav: '集合',
 			collectionKeysMove: '↑↓ 选择 · ←→ 换列',
 			collectionKeysOpen: 'Enter 打开 · Esc 关闭',
-			collectionMore: '更多',
-			collectionMoreHint: '插件市场与创建插件',
 			collectionEmpty: '没有可收进集合的面板入口。',
 			helpTitle: '说明',
 			helpBody: '本插件只改变左侧菜单的可见性：被隐藏的功能仍然注册在布局里，通过命令或其他入口照常可用。设置保存在本机 profile 中，重启后保留。',
@@ -146,8 +144,6 @@ window.__ModuleLoader__.load({
 			collectionNav: 'Collection',
 			collectionKeysMove: '↑↓ select · ←→ column',
 			collectionKeysOpen: 'Enter open · Esc close',
-			collectionMore: 'More',
-			collectionMoreHint: 'Plugin market and creating plugins',
 			collectionEmpty: 'No panel entry is available to collect.',
 			helpTitle: 'How it works',
 			helpBody: 'This plugin only changes left-menu visibility: a hidden feature stays registered in the layout and remains reachable by command or other entry points. The set lives in this machine\'s profile and survives a restart.',
@@ -238,9 +234,6 @@ window.__ModuleLoader__.load({
 			'.lp-fly-item[data-selected="true"] .lp-fly-item-glyph{color:var(--dsw-alias-state-business-primary)}',
 			'.lp-fly-item[data-selected="true"]::before{content:"";position:absolute;left:0;top:50%;width:2px;height:16px;border-radius:2px;transform:translateY(-50%);background:var(--dsw-alias-state-business-primary)}',
 			'.lp-fly-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 10px 3px;border-top:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:11.5px;line-height:16px}',
-			'.lp-fly-divider{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l2)}',
-			'.lp-fly-extras{display:flex;flex-direction:column;gap:2px;padding:0 2px}',
-			'.lp-fly-item[data-role="more"] .lp-fly-item-glyph{color:var(--dsw-alias-label-tertiary)}',
 			'.lp-fly-foot kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:0 4px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 6%,transparent);color:var(--dsw-alias-label-secondary)}',
 			'@media (prefers-reduced-motion:reduce){.lp-coll,.lp-coll-chev,.lp-fly-item{transition:none}}',
 
@@ -793,70 +786,65 @@ window.__ModuleLoader__.load({
 						+ '</svg>'
 				}
 
-				/** Split the entries into the card's two columns (column-major). */
+				/**
+				 * Deal the rows into the card's two columns, row by row.
+				 *
+				 * Row-major, not column-major: the overflow entries are simply the
+				 * last rows of one list, so they must fill the free cells beside the
+				 * panel rows rather than stack under each other in the second column
+				 * (which reads as a group of their own, i.e. exactly the special
+				 * casing this card is supposed to avoid).
+				 */
 				function splitColumns(items) {
-					const half = Math.ceil(items.length / 2)
-					return [items.slice(0, half), items.slice(half)]
+					const left = []
+					const right = []
+					for (let index = 0; index < items.length; index += 1) {
+						if (index % 2 === 0) left.push(items[index])
+						else right.push(items[index])
+					}
+					return [left, right]
 				}
 
 				/** Repaint the card's contents for the current entries. */
 				function fillCard(items) {
 					if (collectionCard === null) return
 					const tFn = t
-					// A repaint must not stack the overflow rows.
-					for (const stale of [...collectionCard.querySelectorAll('.lp-fly-divider, [data-more-label]')]) stale.remove()
-					const [left, right] = splitColumns(items)
+					// One list, one layout: the shell's overflow entries are just more
+					// rows at the end of the same two columns — no divider, no group of
+					// their own, no special treatment. `kind` only decides what a click
+					// does, never how the row looks.
+					const rows = [
+						...items.map((item) => ({ kind: 'panel', id: item.id, label: item.label, glyph: item.glyph })),
+						...moreEntries.map((entry) => ({ kind: 'more', id: null, label: entry.label, glyph: entry.glyph })),
+					]
+					const [left, right] = splitColumns(rows)
 					const columns = [left, right]
 					const cols = collectionCard.firstElementChild
 					for (let column = 0; column < 2; column += 1) {
 						const host = cols.children[column]
 						host.textContent = ''
-						for (const item of columns[column]) {
+						for (const row of columns[column]) {
 							const button = document.createElement('button')
 							button.type = 'button'
 							button.className = 'lp-fly-item'
-							button.setAttribute('data-id', item.id)
 							button.setAttribute('data-column', String(column))
-							if (item.id === collection.selectedId) button.setAttribute('data-selected', 'true')
-							button.setAttribute('aria-current', item.id === collection.selectedId ? 'true' : 'false')
+							if (row.kind === 'more') {
+								button.setAttribute('data-more-label', row.label)
+							} else {
+								button.setAttribute('data-id', row.id)
+								if (row.id === collection.selectedId) button.setAttribute('data-selected', 'true')
+								button.setAttribute('aria-current', row.id === collection.selectedId ? 'true' : 'false')
+							}
 							const glyph = document.createElement('span')
 							glyph.className = 'lp-fly-item-glyph'
 							glyph.setAttribute('aria-hidden', 'true')
-							glyph.innerHTML = item.glyph ?? ''
+							glyph.innerHTML = row.glyph ?? ''
 							const name = document.createElement('span')
 							name.className = 'lp-fly-item-name'
-							name.textContent = item.label
+							name.textContent = row.label
 							button.append(glyph, name)
 							host.append(button)
 						}
-					}
-					// The shell's overflow entries are ordinary rows in the same card —
-					// one layer, not a popup on a popup. They are actions rather than
-					// panels, so they get a divider above and no selection state.
-					if (moreEntries.length > 0) {
-						const divider = document.createElement('div')
-						divider.className = 'lp-fly-divider'
-						const wrap = document.createElement('div')
-						wrap.className = 'lp-fly-extras'
-						wrap.setAttribute('role', 'group')
-						wrap.setAttribute('aria-label', tFn('collectionMore'))
-						for (const entry of moreEntries) {
-							const button = document.createElement('button')
-							button.type = 'button'
-							button.className = 'lp-fly-item'
-							button.setAttribute('data-more-label', entry.label)
-							const glyph = document.createElement('span')
-							glyph.className = 'lp-fly-item-glyph'
-							glyph.setAttribute('aria-hidden', 'true')
-							glyph.innerHTML = entry.glyph
-							const name = document.createElement('span')
-							name.className = 'lp-fly-item-name'
-							name.textContent = entry.label
-							button.append(glyph, name)
-							wrap.append(button)
-						}
-						cols.after(divider)
-						divider.after(wrap)
 					}
 					const foot = collectionCard.lastElementChild
 					const move = foot.querySelector('[data-role="hint-move"]')
@@ -931,13 +919,21 @@ window.__ModuleLoader__.load({
 				}
 
 				/** Apply the keyboard highlight to the card items. */
-				/** The card's rows in reading order: left column, right column, extras. */
+				/**
+				 * The card's rows in visual reading order: row by row, left then right.
+				 * It has to match `splitColumns`, or the arrow keys would jump around
+				 * the card instead of walking it.
+				 */
 				function cardRing() {
 					if (collectionCard === null) return []
-					const items = [...collectionCard.querySelectorAll('.lp-fly-item')]
-					const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
-					const extras = items.filter((item) => item.getAttribute('data-more-label') !== null)
-					return [...columns[0], ...columns[1], ...extras]
+					const left = [...collectionCard.querySelectorAll('.lp-fly-item[data-column="0"]')]
+					const right = [...collectionCard.querySelectorAll('.lp-fly-item[data-column="1"]')]
+					const ring = []
+					for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+						if (left[index] !== undefined) ring.push(left[index])
+						if (right[index] !== undefined) ring.push(right[index])
+					}
+					return ring
 				}
 
 				function markFocus() {
@@ -1059,7 +1055,6 @@ window.__ModuleLoader__.load({
 					collectionCard.addEventListener('keydown', (event) => {
 						const items = [...collectionCard.querySelectorAll('.lp-fly-item')]
 						if (items.length === 0) return
-						const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
 						const ring = cardRing()
 						if (ring.length === 0) return
 						const currentAt = ring.findIndex((node) => node.getAttribute('data-focus') === 'true')
@@ -1077,13 +1072,14 @@ window.__ModuleLoader__.load({
 							cardFocus.ring = (from + step + ring.length) % ring.length
 						} else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
 							event.preventDefault()
-							const active = ring[currentAt]
-							const column = active === undefined ? 0 : Number(active.getAttribute('data-column') ?? 0)
-							const index = active === undefined ? 0 : columns[column].indexOf(active)
-							const nextColumn = column === 0 ? 1 : 0
-							if (columns[nextColumn].length === 0) return
-							const target = columns[nextColumn][Math.min(Math.max(index, 0), columns[nextColumn].length - 1)]
-							cardFocus.ring = ring.indexOf(target)
+							// Row-major layout: the neighbour in the same visual row is one
+							// step along the ring, so left/right is a single step, clamped
+							// at the ends rather than wrapping into the other column.
+							const step = event.key === 'ArrowRight' ? 1 : -1
+							const from = currentAt === -1 ? 0 : currentAt
+							const next = from + step
+							if (next < 0 || next >= ring.length) return
+							cardFocus.ring = next
 						} else if (event.key === 'Enter' || event.key === ' ') {
 							event.preventDefault()
 							const active = ring[currentAt === -1 ? 0 : currentAt]
