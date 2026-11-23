@@ -3,7 +3,10 @@
  * 无依赖截图工具：用 CDP 打开一个本地 HTML 或 http 地址，按给定视口出图，
  * 可选在截图前执行一段 JS（用于切主题、切方向、模拟 hover）。
  *
- *   node scripts/shot.mjs <file|url> <out.png> [w] [h] [--eval 'js'] [--wait ms]
+ *   node scripts/shot.mjs <file|url> <out.png> [w] [h] [--eval 'js'] [--wait ms] [--dpr n]
+ *
+ * README 图用 1500×1000、DPR 1 直出（与 dsh-context-domains 等插件现有的图同一套：
+ * 侧栏右边界落在 280）。别按 DPR 2 出图再缩放——那样每张图的像素尺寸都不一样。
  *
  * 例：
  *   node scripts/shot.mjs mock/collection-A.html mock/shots/A-dark.png 1440 900
@@ -30,6 +33,7 @@ const flag = (name, fallback) => {
 }
 const evalJs = flag('--eval', '')
 const waitMs = Number(flag('--wait', '1200'))
+const dpr = Number(flag('--dpr', '1'))
 const url = /^https?:/.test(target) ? target : pathToFileURL(resolve(target)).href
 
 const dir = mkdtempSync(join(tmpdir(), 'dsh-shot-'))
@@ -89,7 +93,7 @@ const send = (method, params = {}) =>
 
 await send('Page.enable')
 await send('Runtime.enable')
-await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 2, mobile: false })
+await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: dpr, mobile: false })
 await send('Page.navigate', { url })
 await sleep(waitMs)
 if (evalJs !== '') {

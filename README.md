@@ -20,11 +20,15 @@
 
 设置页里有一个 **集合模式** 开关（默认开）。关掉它，面板入口立刻恢复成原来的一行一个，卡片移除，**你自己隐藏的条目集合原样保留**。
 
-真机效果（dsh-dev 容器，1440×900）：
+真机效果（dsh-dev 容器，1500×1000 直出，与其它插件的 README 图同一套尺寸）：
 
-| 收起 | 悬浮展开（暗） | 设置里的开关 |
-| --- | --- | --- |
-| ![收起](docs/screenshots/collection-closed-dark.png) | ![展开](docs/screenshots/collection-open-dark.png) | ![开关](docs/screenshots/settings-collection.png) |
+| 收起 | 悬浮展开（暗） |
+| --- | --- |
+| ![收起](docs/screenshots/shot-collection-closed.png) | ![展开](docs/screenshots/shot-collection-open.png) |
+
+| 悬浮展开（亮） | 设置里的开关 |
+| --- | --- |
+| ![展开亮色](docs/screenshots/shot-collection-open-light.png) | ![开关](docs/screenshots/shot-settings-collection.png) |
 
 三档设计稿（含明暗两套与三帧状态）在 `mock/`，出题依据与实测令牌在 `docs/proto/collection-brief.md`：
 
