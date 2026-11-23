@@ -12,7 +12,7 @@
 ```
 
 - **首次点击不打开页面**：还没选过任何入口时，左栏**只有这一行**，点「集合」只会把右侧卡片打开/保持，不跳转。
-- **悬浮出卡片**：从行右侧（侧栏 280 + 8 = x=288）滑出一张 **448px 宽的双列卡片**，条目**逐行**填进两列（左、右、左、右……），中缝一条发丝线，已选项带 2px 强调条 + 淡底。
+- **悬浮出卡片**：从行右侧（侧栏 280 + 8）滑出一张 **448px 宽的双列卡片**，条目**逐行**填进两列（左、右、左、右……），中缝一条发丝线，已选项带 2px 强调条 + 淡底。
 - **点击即选中并打开**：卡片里点某项 = 选中它并打开该页面，与直接点原来那一行完全一致；行文字立刻变成 `集合 / 图标 名称`。
 - **再点直接进**：选中后点「集合」= 直接打开斜杠后那一页；悬浮仍然出卡片，可以随时换。
 - **「更多」也在里面，和其它条目完全一样**：外壳溢出菜单的条目（浏览更多插件、创建你的插件……）就是**列表最后的两项**，同样逐行填进那两列，**没有分隔线、没有单独分组、没有第二层弹窗**，点击直接执行。它们不是抄来的：插件会把真实菜单开一次、读下它的行、再关掉（读取期间菜单是透明的，不会闪），所以别的插件往那个菜单里加东西也会自动跟上来。
@@ -26,11 +26,15 @@
 
 | 刷新后未选择：左栏只有「集合」 | 悬浮展开 |
 | --- | --- |
-| ![空态](docs/screenshots/shot-collection-fresh.png) | ![展开](docs/screenshots/shot-collection-open.png) |
+| ![空态](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-collection-fresh.png?v=1) | ![展开](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-collection-open.png?v=1) |
 
-| 设置页：原样加一行开关 |
-| --- |
-| ![设置](docs/screenshots/shot-settings.png) |
+| 选中之后：行变 `集合 / 图标 名称` | 折叠成图标轨 |
+| --- | --- |
+| ![已选](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-collection-selected.png?v=1) | ![图标轨](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-collection-rail.png?v=1) |
+
+设置页（原页面不变，只多一行开关）：
+
+![设置](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-settings.png?v=1)
 
 设计稿（含明暗两套与三帧状态）在 `mock/`，出题依据与实测令牌在 `docs/proto/collection-brief.md`。
 注意 `mock/` 是**当时的候选稿**：定稿把「更多」的条目并进了同一张卡片、没有分隔线也不分组，
@@ -40,34 +44,24 @@
 node scripts/shot.mjs mock/collection-B2.html out.png 1500 1000
 ```
 
-左侧菜单里能出现的每一项都由插件注册而来。装上本插件后，设置里会多出一个
-「左栏菜单」分区，把当前所有面板入口列成一张表，每一项后面带一个开关：
-
-- **面板入口** —— 插件注册到 `sidebar.panellist` 的条目（插件、自动化任务、
-  Token 用量、MCP 服务……），可逐项隐藏或显示。
-- **固定控件** —— 侧边栏外壳自己的座位（新建会话、工作区/会话列表、设置、底部
-  控件、品牌标记）。它们不经过面板注册，因此只列出、不提供开关。
-
-隐藏只改变左侧入口的可见性：被隐藏的功能仍然完整注册在布局服务里，通过命令、
-快捷键或其他入口照常可以打开。
-
-> 插件本身**不注册自己的左栏行**：它注入的那一行是「集合」，代表的是所有面板
-> 入口的折叠视图，而不是又一个插件入口。集合模式关掉时，它连那一行都不留。
-
 ## 安装
 
 ```bash
-# 在 profile 目录里（把路径换成你 clone 下来的位置）
-dsh plugin --profile web add link:/path/to/dsh-leftpanel
+# npm（推荐）
+dsh plugin --profile web add dsh-leftpanel
+
+# 或直接用 GitHub Release 上的 tarball
+dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
 ```
 
-再把包名加进 profile 的 `package.json` → `dsh.profile.bundles`：
+包声明了 `dsh.bundle.patch`，`dsh plugin add` 会自动把它写进 profile 的 `dsh.profile.bundles`。
+手工装的话，把包名加进 profile 的 `package.json`：
 
 ```json
 {
   "dsh": {
     "profile": {
-      "bundles": ["@zhujiuyi/dsh-leftpanel"]
+      "bundles": ["dsh-leftpanel"]
     }
   }
 }
@@ -82,7 +76,7 @@ dsh plugin --profile web add link:/path/to/dsh-leftpanel
 | 半边 | 文件 | 职责 |
 | --- | --- | --- |
 | Host | `index.js` | 把「哪些入口被隐藏」+「集合模式是否开启、选中哪一项」持久化到 Harness home 下的 `left-panel.json`，并提供 `GET/POST /api/left-panel/state` |
-| Browser | `client/client.js` | 向设置页的 `settings.section` 列表注册「左栏菜单」分区，并把隐藏状态应用到侧边栏行上 |
+| Browser | `client/client.js` | 向设置页的 `settings.section` 列表注册「左栏菜单」分区，把隐藏状态应用到侧边栏行上，并注入「集合」行与它的浮层卡片 |
 
 **为什么需要 Host 半边。** 隐藏集合必须在首屏绘制前就能读到，而且要跨重启保留。
 放在 Host 侧意味着每个 profile 只有一份权威状态，浏览器侧读到的就是它。
@@ -98,6 +92,10 @@ dsh plugin --profile web add link:/path/to/dsh-leftpanel
 会在外壳重新渲染（切换语言、折叠/展开、插件迟到加载）时重新应用标记。当行数与
 投影不一致或名称对不上时，只处理名称精确匹配的行，退化成「不隐藏任何行」，而
 不会隐藏错行。
+
+**集合行是怎么注入的。** 插件往同一个 `<nav>` 里插一个自己的按钮（`data-dsh-leftpanel-collection`），
+并把它从面板投影里排除，所以它不会被自己当成一个面板项。卡片挂在 `<body>` 上、`position:fixed`，
+跟着行的位置走。挂载失败时退化为「什么都不隐藏」，不会出现「菜单藏了但没有入口回来」。
 
 **持久化。** `localStorage` 只作首屏镜像，让第一次绘制就隐藏正确的行；Host 侧的
 `left-panel.json` 才是权威。每次开关都会乐观写入并回报失败。
@@ -118,13 +116,14 @@ dsh plugin --profile web add link:/path/to/dsh-leftpanel
 - `collection.enabled` 缺省视为 `true`（旧文件没有这个键 = 全新安装 = 开启）。
 - `collection.selectedId` 是斜杠后显示的那一项；指向已消失的条目时退化为「未选」。
 
+POST 是**局部更新**：只发 `{hidden}` 不会动 `collection`，反之亦然。
+
 损坏的文件不会让页面报错：它降级为「什么都没隐藏」，并在日志里告警一次。
 
 ## 开发
 
 ```bash
-node --check index.js && node --check client/client.js
-node --test "test/*.mjs"
+npm run verify     # 语法检查（scripts/syntax-check.mjs）+ node --test
 ```
 
 两组自检，共 38 项：
@@ -140,6 +139,36 @@ node --test "test/*.mjs"
   关闭时恢复且用户隐藏集合仍然生效、缺省配置视为开启、卡片挂在 `<body>` 上且初始
   关闭、外壳的「更多」启动器随模式折叠/恢复、条目**逐行**铺进两列、折叠轨只留图标
   并在有选中项时点一个角标、集合模式下观察器仍挂在 `body` 上。
+
+在容器里跑真机（`~/Projects/dsh-docker`）：
+
+```bash
+docker compose restart dsh      # 改 client/index 后都要重启
+./dev-url.sh                    # 拿地址（cookie 失效时自动抓 token）
+```
+
+## 发版
+
+一次发布 = 一次标签推送，标签必须是 `v<package.json 的 version>`，否则 `release.yml` 直接失败。
+
+```bash
+npm version patch --no-git-tag-version
+git commit -am "chore: release vX.Y.Z"
+git tag vX.Y.Z && git push origin main --tags
+```
+
+workflow 会：跑 `npm run verify` → 校验标签与版本一致 → `npm pack` → 建 GitHub Release 并挂
+`dsh-leftpanel-<version>.tgz` + 稳定别名 `dsh-leftpanel.tgz` + `SHA256SUMS.txt` → 若仓库配了
+`NPM_TOKEN` secret 就发 npm（幂等，已存在则跳过）→ 自检稳定下载地址是 200。
+
+**改了能力描述或截图**，发版后还要更新插件市场条目：
+
+```bash
+scripts/market-submit.sh
+```
+
+它幂等：给仓库加 `dsh-plugin` topic、fork `awesome-dsh-plugin`、把 `docs/market/guicaiyue__dsh-leftpanel.yml`
+提成 PR。条目里没有版本号字段，`tarball` 指向稳定别名，所以只有描述/截图变了才需要重跑。
 
 ## 许可
 

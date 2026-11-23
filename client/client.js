@@ -1,5 +1,5 @@
 /**
- * @zhujiuyi/dsh-leftpanel — browser half (DSH web client).
+ * dsh-leftpanel — browser half (DSH web client).
  *
  * Loaded as a classic script through `window.__ModuleLoader__.load()`, exactly
  * like every other client bundle. Conventions this file keeps:
@@ -36,7 +36,7 @@
  */
 
 window.__ModuleLoader__.load({
-	id: '@zhujiuyi/dsh-leftpanel',
+	id: 'dsh-leftpanel',
 	factory(require) {
 		'use strict'
 
@@ -352,7 +352,7 @@ window.__ModuleLoader__.load({
 				ctx.effect(() => {
 					if (typeof document === 'undefined') return () => {}
 					const style = document.createElement('style')
-					style.setAttribute('data-plugin', '@zhujiuyi/dsh-leftpanel')
+					style.setAttribute('data-plugin', 'dsh-leftpanel')
 					style.textContent = CSS
 					document.head.appendChild(style)
 					return () => {

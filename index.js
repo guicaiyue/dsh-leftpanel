@@ -1,5 +1,5 @@
 /**
- * @zhujiuyi/dsh-leftpanel — host half.
+ * dsh-leftpanel — host half.
  *
  * A standard DSH plugin: named exports `name` / `apply`, no Config, no
  * dependencies. It owns exactly two jobs, both about the left sidebar's shape:
@@ -27,7 +27,7 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
 /** Package name; also the client module id and the Loader row's plugin name. */
-export const name = '@zhujiuyi/dsh-leftpanel'
+export const name = 'dsh-leftpanel'
 
 /** The plugin runs without optional services; `connection` is injected locally. */
 export const inject = []

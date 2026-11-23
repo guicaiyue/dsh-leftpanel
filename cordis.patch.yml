@@ -1,9 +1,9 @@
-# @zhujiuyi/dsh-leftpanel — the Host row this bundle inserts.
+# dsh-leftpanel — the Host row this bundle inserts.
 #
 # One row: the Host half that persists which sidebar panel entries are hidden
 # (a tiny JSON file under the Harness home) and serves
 # GET/POST /api/left-panel/state to the browser half. It declares no Config.
 - insert:
     - id: left-panel
-      name: "@zhujiuyi/dsh-leftpanel"
+      name: "dsh-leftpanel"
       config: {}

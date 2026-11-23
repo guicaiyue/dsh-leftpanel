@@ -1,6 +1,6 @@
 # 给接手这个仓库的 agent
 
-DSH 插件 `@zhujiuyi/dsh-leftpanel`：把左侧菜单的面板入口收进一行「集合」，并逐个隐藏或显示。
+DSH 插件 `dsh-leftpanel`：把左侧菜单的面板入口收进一行「集合」，并逐个隐藏或显示。
 现役行为、存储格式与真机截图见 [`README.md`](README.md)；设计出题稿（已过期，仅留依据）在
 [`docs/proto/collection-brief.md`](docs/proto/collection-brief.md)。
 
