@@ -59,6 +59,10 @@ window.__ModuleLoader__.load({
 		const COLLECTION_ATTR = 'data-dsh-leftpanel-collection'
 		/** Attribute marking the floating card that row opens. */
 		const CARD_ATTR = 'data-dsh-leftpanel-card'
+		/** Attribute marking the shell's own "更多" launcher while it is folded away. */
+		const MORE_HIDE_ATTR = 'data-dsh-leftpanel-more-hidden'
+		/** Attribute marking the nested card that the card's "更多" item opens. */
+		const SUB_ATTR = 'data-dsh-leftpanel-subcard'
 		/** Boot mirror of the collection setting, next to the hidden-set mirror. */
 		const COLLECTION_MIRROR_KEY = 'dsh-leftpanel:collection'
 		/** Card geometry, measured against the live sidebar (see docs/proto). */
@@ -99,12 +103,11 @@ window.__ModuleLoader__.load({
 			collectionSub: '左栏只留一行「集合」，面板入口收进右侧双列卡片',
 			collectionOn: '已开启',
 			collectionOff: '已关闭',
-			collectionCurrent: '斜杠后显示的入口',
-			collectionNone: '尚未选择',
-			collectionClear: '清除选择',
 			collectionNav: '集合',
-			collectionKeysMove: '↑↓ 选择 · ←→ 换列',
+			collectionKeysMove: '↑↓ 选择 · ←→ 换列 · 更多 →',
 			collectionKeysOpen: 'Enter 打开 · Esc 关闭',
+			collectionMore: '更多',
+			collectionMoreHint: '插件市场与创建插件',
 			collectionEmpty: '没有可收进集合的面板入口。',
 			helpTitle: '说明',
 			helpBody: '本插件只改变左侧菜单的可见性：被隐藏的功能仍然注册在布局里，通过命令或其他入口照常可用。设置保存在本机 profile 中，重启后保留。',
@@ -140,12 +143,11 @@ window.__ModuleLoader__.load({
 			collectionSub: 'Keep one "Collection" row in the sidebar and move every panel entry into the card beside it',
 			collectionOn: 'On',
 			collectionOff: 'Off',
-			collectionCurrent: 'Shown after the slash',
-			collectionNone: 'Nothing selected yet',
-			collectionClear: 'Clear selection',
 			collectionNav: 'Collection',
-			collectionKeysMove: '↑↓ select · ←→ column',
+			collectionKeysMove: '↑↓ select · ←→ column · More →',
 			collectionKeysOpen: 'Enter open · Esc close',
+			collectionMore: 'More',
+			collectionMoreHint: 'Plugin market and creating plugins',
 			collectionEmpty: 'No panel entry is available to collect.',
 			helpTitle: 'How it works',
 			helpBody: 'This plugin only changes left-menu visibility: a hidden feature stays registered in the layout and remains reachable by command or other entry points. The set lives in this machine\'s profile and survives a restart.',
@@ -203,6 +205,12 @@ window.__ModuleLoader__.load({
 
 			// ── collection row + card (styles for the injected sidebar DOM) ──
 			`[${COLLECTION_ATTR}]{position:relative}`,
+			// The shell's own overflow launcher folds into the card as its second
+			// layer; it is a <span> wrapper, so the hide rule targets the wrapper.
+			`[${MORE_HIDE_ATTR}]{display:none !important}`,
+			// Reading the real overflow menu means opening it; this keeps that
+			// read invisible instead of flashing a menu anchored to a hidden row.
+			'html[data-dsh-leftpanel-harvest] [role="menu"]{opacity:0 !important;pointer-events:none !important}',
 			'.lp-coll{display:flex;align-items:center;gap:6px;width:100%;min-height:36px;padding:7px 9px;border:0;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .15s ease}',
 			'.lp-coll:hover,.lp-coll[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover)}',
 			'.lp-coll:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
@@ -213,8 +221,8 @@ window.__ModuleLoader__.load({
 			'.lp-coll-item{flex:0 1 auto;display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--dsw-alias-label-primary)}',
 			'.lp-coll-item[hidden],.lp-coll-slash[hidden]{display:none}',
 			'.lp-coll-item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.lp-coll-chev{flex:0 0 auto;margin-left:auto;color:var(--dsw-alias-label-tertiary);display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;transition:transform .15s ease}',
-			'.lp-coll[aria-expanded="true"] .lp-coll-chev{transform:rotate(180deg)}',
+			'.lp-coll-chev{flex:0 0 auto;margin-left:auto;color:var(--dsw-alias-label-tertiary);display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;transition:color .15s ease}',
+			'.lp-coll:hover .lp-coll-chev,.lp-coll[aria-expanded="true"] .lp-coll-chev{color:var(--dsw-alias-label-secondary)}',
 
 			'.lp-card{position:fixed;z-index:2147483000;box-sizing:border-box;padding:6px;border-radius:var(--dsw-radius-lg,16px);background:var(--dsw-alias-bg-layer-2);border:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);box-shadow:0 3px 8px rgba(0,0,0,.04),0 0 20px rgba(0,0,0,.05);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px}',
 			'.lp-card[hidden]{display:none}',
@@ -230,6 +238,11 @@ window.__ModuleLoader__.load({
 			'.lp-card-item[data-selected="true"] .lp-card-item-glyph{color:var(--dsw-alias-state-business-primary)}',
 			'.lp-card-item[data-selected="true"]::before{content:"";position:absolute;left:0;top:50%;width:2px;height:16px;border-radius:2px;transform:translateY(-50%);background:var(--dsw-alias-state-business-primary)}',
 			'.lp-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 10px 3px;border-top:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:11.5px;line-height:16px}',
+			'.lp-card-divider{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l2)}',
+			'.lp-card-item[data-role="more"] .lp-card-item-glyph{color:var(--dsw-alias-label-tertiary)}',
+			'.lp-card-item-chev{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-label-tertiary)}',
+			'.lp-subcard{position:fixed;z-index:2147483001;box-sizing:border-box;padding:4px;border-radius:var(--dsw-radius-lg,16px);background:var(--dsw-alias-bg-layer-2);border:var(--dsh-hairline-width,.5px) solid var(--dsw-alias-border-l2);box-shadow:0 3px 8px rgba(0,0,0,.04),0 0 20px rgba(0,0,0,.05);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px;min-width:200px}',
+			'.lp-subcard[hidden]{display:none}',
 			'.lp-card-foot kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:0 4px;border-radius:4px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 6%,transparent);color:var(--dsw-alias-label-secondary)}',
 			'@media (prefers-reduced-motion:reduce){.lp-coll,.lp-coll-chev,.lp-card-item{transition:none}}',
 
@@ -549,6 +562,13 @@ window.__ModuleLoader__.load({
 				/** Document-level "click outside closes the card" listener. */
 				/** @type {any} */
 				let outsideListener = null
+				/** The nested card behind the card's "更多" row. */
+				/** @type {any} */
+				let subCard = null
+				/** Entries harvested from the shell's own overflow menu. */
+				let moreEntries = []
+				/** True once the harvest has succeeded at least once. */
+				let moreHarvested = false
 				/**
 				 * Set when the card was closed on purpose (Escape, a pick, a click
 				 * outside). Focus returning to the row must not re-open it in that
@@ -556,8 +576,8 @@ window.__ModuleLoader__.load({
 				 * and a focus-driven open would immediately undo it.
 				 */
 				let suppressFocusOpen = false
-				/** Index of the keyboard-highlighted item, per column. */
-				let cardFocus = { column: 0, index: 0 }
+				/** Position of the keyboard highlight in the card's ring. */
+				let cardFocus = { ring: 0 }
 
 				/** Collect the live panel rows and the glyph each one paints. */
 				function readRowModel() {
@@ -637,6 +657,136 @@ window.__ModuleLoader__.load({
 					return row
 				}
 
+				/**
+				 * The shell's own overflow launcher ("更多").
+				 *
+				 * It is a `<span>` wrapper holding a panel-row button; the wrapper is
+				 * what gets hidden, because the button inside is what React owns.
+				 * @returns {{ wrapper: any, button: any } | null}
+				 */
+				function findMoreLauncher() {
+					const rowList = findRowList()
+					if (rowList === null) return null
+					for (const node of [...rowList.children]) {
+						if (node.tagName === 'BUTTON') continue
+						const button = node.querySelector?.('button')
+						if (button === null || button === undefined) continue
+						return { wrapper: node, button }
+					}
+					return null
+				}
+
+				/** Wait one paint, so a menu React just opened is in the DOM. */
+				function nextPaint() {
+					return new Promise((resolve) => {
+						if (typeof window.requestAnimationFrame === 'function') {
+							window.requestAnimationFrame(() => window.setTimeout(resolve, 0))
+						} else {
+							window.setTimeout(resolve, 32)
+						}
+					})
+				}
+
+				/**
+				 * Read the entries of the shell's overflow menu.
+				 *
+				 * The menu's contents come from the `sidebar.panellist.actions` slot,
+				 * which is another plugin's React tree — there is no API to enumerate
+				 * it, so the only truthful source is the menu itself: open it, read
+				 * the rendered rows, close it again. The `harvest` attribute blanks
+				 * the menu while that happens so nothing flashes on screen.
+				 * @returns {Promise<boolean>}
+				 */
+				async function harvestMoreEntries() {
+					const launcher = findMoreLauncher()
+					const root = typeof document === 'undefined' ? null : document.documentElement
+					if (launcher === null || root === null || root === undefined) return false
+					root.setAttribute('data-dsh-leftpanel-harvest', '')
+					try {
+						launcher.button.click()
+						await nextPaint()
+						const rows = [...document.querySelectorAll('[role="menuitem"]')]
+						if (rows.length === 0) return false
+						moreEntries = rows.map((row) => {
+							const glyphHost = row.querySelector('span')
+							return {
+								label: (row.getAttribute('aria-label') ?? row.textContent ?? '').trim(),
+								glyph: glyphHost === null ? '' : glyphHost.innerHTML,
+							}
+						}).filter((entry) => entry.label !== '')
+						moreHarvested = moreEntries.length > 0
+						return moreHarvested
+					} catch {
+						// Reading another plugin's menu is best-effort: any failure
+						// means "no second layer", never a broken sidebar.
+						return false
+					} finally {
+						// Close whatever opened, then stop hiding menus.
+						try {
+							document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+							document.body?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+						} catch {
+							// A stub document without events still has to finish cleanly.
+						}
+						root.removeAttribute('data-dsh-leftpanel-harvest')
+					}
+				}
+
+				/** Activate a harvested entry by opening the real menu and clicking it. */
+				async function activateMoreEntry(label) {
+					const launcher = findMoreLauncher()
+					if (launcher === null) return
+					launcher.button.click()
+					await nextPaint()
+					const rows = [...document.querySelectorAll('[role="menuitem"]')]
+					const row = rows.find((candidate) => ((candidate.getAttribute('aria-label') ?? candidate.textContent ?? '').trim() === label))
+					if (row !== undefined) row.click()
+					else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+				}
+
+				/** Build (once) the nested card behind the "更多" row. */
+				function buildSubCard() {
+					const card = document.createElement('div')
+					card.className = 'lp-subcard'
+					card.setAttribute(SUB_ATTR, '')
+					card.setAttribute('role', 'menu')
+					card.hidden = true
+					return card
+				}
+
+				/** Paint the nested card from the harvested entries. */
+				function fillSubCard() {
+					if (subCard === null) return
+					subCard.textContent = ''
+					for (const entry of moreEntries) {
+						const button = document.createElement('button')
+						button.type = 'button'
+						button.className = 'lp-card-item'
+						button.setAttribute('data-more-label', entry.label)
+						const glyph = document.createElement('span')
+						glyph.className = 'lp-card-item-glyph'
+						glyph.setAttribute('aria-hidden', 'true')
+						glyph.innerHTML = entry.glyph
+						const name = document.createElement('span')
+						name.className = 'lp-card-item-name'
+						name.textContent = entry.label
+						button.append(glyph, name)
+						subCard.append(button)
+					}
+				}
+
+				/** Place the nested card to the right of its trigger row. */
+				function placeSubCard(trigger) {
+					if (subCard === null || trigger === null) return
+					const rect = trigger.getBoundingClientRect()
+					const height = subCard.offsetHeight
+					const width = subCard.offsetWidth
+					const top = Math.max(8, Math.min(rect.top, window.innerHeight - height - 8))
+					const left = Math.min(rect.right + 4, window.innerWidth - width - 8)
+					subCard.style.left = Math.max(8, left) + 'px'
+					subCard.style.top = top + 'px'
+				}
+
 				/** Build (once) the floating card. */
 				function buildCard() {
 					const card = document.createElement('div')
@@ -676,10 +826,18 @@ window.__ModuleLoader__.load({
 						+ '</svg>'
 				}
 
-				/** The chevron the row carries on its right edge. */
+				/**
+				 * The glyph on the row's right edge.
+				 *
+				 * Not a chevron: a down/right chevron reads as "expands downward",
+				 * which is the wrong promise for a card that opens sideways. This is
+				 * the "open beside" mark — a panel outline with an arrow leaving its
+				 * right edge — which is what actually happens.
+				 */
 				function chevronGlyph() {
 					return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
-						+ '<path d="M4.4 6.4 8 10l3.6-3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+						+ '<rect x="1.9" y="3.4" width="8.2" height="9.2" rx="1.7" stroke="currentColor" stroke-width="1.3"/>'
+						+ '<path d="M8.6 8h5.2M11.2 5.4 13.8 8l-2.6 2.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>'
 						+ '</svg>'
 				}
 
@@ -693,6 +851,8 @@ window.__ModuleLoader__.load({
 				function fillCard(items) {
 					if (collectionCard === null) return
 					const tFn = t
+					// A repaint must not stack dividers and "更多" rows.
+					for (const stale of [...collectionCard.querySelectorAll('.lp-card-divider, [data-role="more"]')]) stale.remove()
 					const [left, right] = splitColumns(items)
 					const columns = [left, right]
 					const cols = collectionCard.firstElementChild
@@ -717,6 +877,38 @@ window.__ModuleLoader__.load({
 							button.append(glyph, name)
 							host.append(button)
 						}
+					}
+					// The shell's overflow entries ride in the same card as a second
+					// layer: a divider, then one row that opens a nested card. They are
+					// not panel entries, so they never join the two columns.
+					if (moreEntries.length > 0) {
+						const divider = document.createElement('div')
+						divider.className = 'lp-card-divider'
+						const moreRow = document.createElement('button')
+						moreRow.type = 'button'
+						moreRow.className = 'lp-card-item'
+						moreRow.setAttribute('data-role', 'more')
+						moreRow.setAttribute('aria-haspopup', 'menu')
+						moreRow.setAttribute('aria-expanded', 'false')
+						const moreGlyph = document.createElement('span')
+						moreGlyph.className = 'lp-card-item-glyph'
+						moreGlyph.setAttribute('aria-hidden', 'true')
+						moreGlyph.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
+							+ '<circle cx="3.2" cy="3.2" r="1.05" fill="currentColor"/><circle cx="8" cy="3.2" r="1.05" fill="currentColor"/><circle cx="12.8" cy="3.2" r="1.05" fill="currentColor"/>'
+							+ '<circle cx="3.2" cy="8" r="1.05" fill="currentColor"/><circle cx="8" cy="8" r="1.05" fill="currentColor"/><circle cx="12.8" cy="8" r="1.05" fill="currentColor"/>'
+							+ '<circle cx="3.2" cy="12.8" r="1.05" fill="currentColor"/><circle cx="8" cy="12.8" r="1.05" fill="currentColor"/><circle cx="12.8" cy="12.8" r="1.05" fill="currentColor"/>'
+							+ '</svg>'
+						const moreName = document.createElement('span')
+						moreName.className = 'lp-card-item-name'
+						moreName.textContent = tFn('collectionMore')
+						const moreChev = document.createElement('span')
+						moreChev.className = 'lp-card-item-chev'
+						moreChev.setAttribute('aria-hidden', 'true')
+						moreChev.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">'
+							+ '<path d="M6.4 4.4 10 8l-3.6 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+						moreRow.append(moreGlyph, moreName, moreChev)
+						cols.after(divider)
+						divider.after(moreRow)
 					}
 					const foot = collectionCard.lastElementChild
 					const move = foot.querySelector('[data-role="hint-move"]')
@@ -780,11 +972,16 @@ window.__ModuleLoader__.load({
 					if (open && collection.enabled !== true) return
 					collectionRow.setAttribute('aria-expanded', open ? 'true' : 'false')
 					collectionCard.hidden = !open
+					// The nested card belongs to the card: it may never outlive it.
+					if (!open && subCard !== null) {
+						subCard.hidden = true
+						for (const row of collectionCard.querySelectorAll('[data-role="more"]')) row.setAttribute('aria-expanded', 'false')
+					}
 					if (open) {
 						placeCard()
 						const first = collectionCard.querySelector('.lp-card-item')
 						if (first !== null) {
-							cardFocus = { column: 0, index: 0 }
+							cardFocus = { ring: 0 }
 							markFocus()
 						}
 					}
@@ -794,11 +991,13 @@ window.__ModuleLoader__.load({
 				function markFocus() {
 					if (collectionCard === null) return
 					const items = [...collectionCard.querySelectorAll('.lp-card-item')]
+					const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
+					const moreRow = collectionCard.querySelector('[data-role="more"]')
+					const ring = [...columns[0], ...columns[1]]
+					if (moreRow !== null) ring.push(moreRow)
+					const target = ring[cardFocus.ring]
 					for (const item of items) {
-						const column = Number(item.getAttribute('data-column'))
-						const index = [...item.parentElement.children].indexOf(item)
-						const on = column === cardFocus.column && index === cardFocus.index
-						if (on) item.setAttribute('data-focus', 'true')
+						if (item === target) item.setAttribute('data-focus', 'true')
 						else item.removeAttribute('data-focus')
 					}
 				}
@@ -893,52 +1092,144 @@ window.__ModuleLoader__.load({
 						closeNow()
 					}
 					document.addEventListener('pointerdown', outsideListener, true)
+					const openSub = (trigger) => {
+						if (subCard === null || moreEntries.length === 0) return
+						fillSubCard()
+						subCard.hidden = false
+						trigger.setAttribute('aria-expanded', 'true')
+						placeSubCard(trigger)
+					}
+					const closeSub = () => {
+						if (subCard === null) return
+						subCard.hidden = true
+						for (const row of collectionCard.querySelectorAll('[data-role="more"]')) row.setAttribute('aria-expanded', 'false')
+					}
+					collectionCard.addEventListener('pointerover', (event) => {
+						const more = event.target.closest?.('[data-role="more"]')
+						if (more !== null && more !== undefined) openSub(more)
+					})
 					collectionCard.addEventListener('click', (event) => {
+						const more = event.target.closest?.('[data-role="more"]')
+						if (more !== null && more !== undefined) {
+							openSub(more)
+							return
+						}
 						const button = event.target.closest?.('.lp-card-item')
 						if (button === null || button === undefined) return
 						const id = button.getAttribute('data-id')
 						if (id !== null) chooseEntry(id)
 					})
+					subCard?.addEventListener('click', (event) => {
+						const button = event.target.closest?.('[data-more-label]')
+						if (button === null || button === undefined) return
+						const label = button.getAttribute('data-more-label')
+						closeSub()
+						setCardOpen(false)
+						if (label !== null) void activateMoreEntry(label)
+					})
+					// Keyboard model: the two columns are one vertical ring, and the
+					// "更多" row is the last stop on that ring — a row that only the
+					// pointer can reach is not reachable.
 					collectionCard.addEventListener('keydown', (event) => {
 						const items = [...collectionCard.querySelectorAll('.lp-card-item')]
 						if (items.length === 0) return
 						const columns = [items.filter((item) => item.getAttribute('data-column') === '0'), items.filter((item) => item.getAttribute('data-column') === '1')]
+						const moreRow = collectionCard.querySelector('[data-role="more"]')
+						// Column-major order: left column top-down, then right column.
+						const ring = [...columns[0], ...columns[1]]
+						if (moreRow !== null) ring.push(moreRow)
+						if (ring.length === 0) return
+						const currentAt = ring.findIndex((node) => node.getAttribute('data-focus') === 'true')
+
 						if (event.key === 'Escape') {
 							event.preventDefault()
+							if (subCard !== null && subCard.hidden === false) {
+								closeSub()
+								markFocus()
+								return
+							}
 							closeNow()
 							collectionRow.focus()
 							return
 						}
 						if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 							event.preventDefault()
-							const size = columns[cardFocus.column].length
-							if (size === 0) return
 							const step = event.key === 'ArrowDown' ? 1 : -1
-							cardFocus.index = (cardFocus.index + step + size) % size
+							const from = currentAt === -1 ? (step === 1 ? -1 : 0) : currentAt
+							cardFocus.ring = (from + step + ring.length) % ring.length
 						} else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
 							event.preventDefault()
-							const next = cardFocus.column === 0 ? 1 : 0
-							if (columns[next].length === 0) return
-							cardFocus.column = next
-							cardFocus.index = Math.min(cardFocus.index, columns[next].length - 1)
+							// Left/right moves between the two columns at the same row index;
+							// from the "更多" row it goes back up into the right column.
+							const active = ring[currentAt]
+							if (active !== undefined && active.getAttribute('data-role') === 'more') {
+								cardFocus.ring = columns[1].length - 1
+							} else {
+								const column = active === undefined ? 0 : Number(active.getAttribute('data-column') ?? 0)
+								const index = active === undefined ? 0 : columns[column].indexOf(active)
+								const nextColumn = column === 0 ? 1 : 0
+								if (columns[nextColumn].length === 0) return
+								const target = columns[nextColumn][Math.min(index, columns[nextColumn].length - 1)]
+								cardFocus.ring = ring.indexOf(target)
+							}
 						} else if (event.key === 'Enter' || event.key === ' ') {
 							event.preventDefault()
-							const active = columns[cardFocus.column][cardFocus.index]
-							if (active !== undefined) chooseEntry(active.getAttribute('data-id'))
+							const active = ring[currentAt === -1 ? 0 : currentAt]
+							if (active === undefined) return
+							if (active.getAttribute('data-role') === 'more') {
+								openSub(active)
+								markFocus()
+								const first = subCard?.querySelector('.lp-card-item')
+								first?.focus()
+								return
+							}
+							const id = active.getAttribute('data-id')
+							if (id !== null) chooseEntry(id)
 							return
 						} else {
 							return
 						}
 						markFocus()
-						const active = columns[cardFocus.column][cardFocus.index]
-						active?.focus()
+						ring[cardFocus.ring]?.focus()
+					})
+					// Inside the nested card: arrows walk it, Enter activates, Esc returns.
+					subCard?.addEventListener('keydown', (event) => {
+						const rows = [...subCard.querySelectorAll('[data-more-label]')]
+						if (rows.length === 0) return
+						const at = rows.findIndex((row) => row === document.activeElement)
+						if (event.key === 'Escape') {
+							event.preventDefault()
+							closeSub()
+							markFocus()
+							collectionCard.querySelector('[data-role="more"]')?.focus()
+							return
+						}
+						if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+							event.preventDefault()
+							const step = event.key === 'ArrowDown' ? 1 : -1
+							const next = ((at === -1 ? 0 : at) + step + rows.length) % rows.length
+							rows[next].focus()
+							return
+						}
+						if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault()
+							const row = rows[at === -1 ? 0 : at]
+							const label = row?.getAttribute('data-more-label')
+							closeSub()
+							setCardOpen(false)
+							if (label !== null && label !== undefined) void activateMoreEntry(label)
+						}
 					})
 				}
 
 				/** Remove the injected row and card, if they exist. */
 				function unmountCollection() {
+					const launcher = findMoreLauncher()
+					if (launcher !== null) launcher.wrapper.removeAttribute(MORE_HIDE_ATTR)
 					if (collectionRow !== null) collectionRow.remove()
 					if (collectionCard !== null) collectionCard.remove()
+					if (subCard !== null) subCard.remove()
+					subCard = null
 					if (outsideListener !== null) {
 						document.removeEventListener('pointerdown', outsideListener, true)
 						outsideListener = null
@@ -971,8 +1262,27 @@ window.__ModuleLoader__.load({
 					}
 					if (collectionCard === null) {
 						collectionCard = buildCard()
+						subCard = buildSubCard()
 						wireCollection()
-						document.body.append(collectionCard)
+						document.body.append(collectionCard, subCard)
+					}
+					// The shell's overflow launcher folds in here too; its entries become
+					// the card's second layer, so nothing is lost by hiding the row.
+					const launcher = findMoreLauncher()
+					if (launcher !== null) launcher.wrapper.setAttribute(MORE_HIDE_ATTR, '')
+					if (!moreHarvested) {
+						moreHarvested = true
+						void harvestMoreEntries().then((ok) => {
+							if (!ok) {
+								// A failed harvest must not leave the overflow unreachable:
+								// put the launcher back and stop folding it.
+								moreHarvested = false
+								launcher?.wrapper.removeAttribute(MORE_HIDE_ATTR)
+								return
+							}
+							collectionSignature = ''
+							paint()
+						})
 					}
 					// The rail (collapsed sidebar) has no room for text: the row keeps
 					// its glyph and the selected entry's icon becomes a corner mark.
@@ -1114,13 +1424,6 @@ window.__ModuleLoader__.load({
 					paint()
 				}
 
-				function clearSelection() {
-					const next = { enabled: collection.enabled, selectedId: null }
-					setCollection(next)
-					void saveToHost({ collection: next })
-					paint()
-				}
-
 				function clearStale() {
 					const live = new Set(panels.map((panel) => panel.id))
 					const kept = hidden.filter((id) => live.has(id))
@@ -1157,16 +1460,6 @@ window.__ModuleLoader__.load({
 					h('rect', { x: 1.8, y: 2.2, width: 12.4, height: 3.2, rx: 1.3, stroke: 'currentColor', strokeWidth: 1.3 }),
 					h('rect', { x: 1.8, y: 6.6, width: 12.4, height: 3.2, rx: 1.3, stroke: 'currentColor', strokeWidth: 1.3, opacity: 0.62 }),
 					h('rect', { x: 1.8, y: 11, width: 12.4, height: 3.2, rx: 1.3, stroke: 'currentColor', strokeWidth: 1.3, opacity: 0.34 }))
-				}
-
-				/**
-				 * Label of the entry the row's slash shows, or null.
-				 * @param {(key: string, vars?: any) => string} tFn
-				 * @returns {string | null}
-				 */
-				function selectedLabel(tFn) {
-					const panel = selectedPanel()
-					return panel === null ? null : panel.label
 				}
 
 				/** The left-menu glyph: a sidebar pane with its rows. */
@@ -1249,42 +1542,32 @@ window.__ModuleLoader__.load({
 							: h('div', { className: 'lp-err' },
 								current.error === 'save' ? tFn('errorSave') : tFn('errorLoad')),
 
-						h('section', { className: 'lp-section', 'data-section': 'collection' },
-							h('div', { className: 'lp-section-head' },
-								h('h2', { className: 'lp-h2' }, tFn('collectionTitle')),
-								h('span', { className: 'lp-hint' }, tFn('collectionHint'))),
-							h('div', { className: 'lp-card' },
-								h('div', { className: 'lp-row' },
-									h('span', { className: 'lp-glyph', 'aria-hidden': 'true' }, h(CollectionIcon, { size: 15 })),
-									h('span', { className: 'lp-main' },
-										h('span', { className: 'lp-name' }, tFn('collectionName')),
-										h('span', { className: 'lp-sub' }, tFn('collectionSub'))),
-									h('span', {
-										className: 'lp-tag',
-										'data-tone': current.collection.enabled ? 'shown' : 'hidden',
-									}, current.collection.enabled ? tFn('collectionOn') : tFn('collectionOff')),
-									h(Switch, {
-										checked: current.collection.enabled,
-										label: tFn('collectionName') + ' — ' + (current.collection.enabled ? tFn('collectionOn') : tFn('collectionOff')),
-										onToggle: toggleCollection,
-									})),
-								h('div', { className: 'lp-row' },
-									h('span', { className: 'lp-glyph', 'aria-hidden': 'true' }, h(MenuIcon, { size: 15 })),
-									h('span', { className: 'lp-main' },
-										h('span', { className: 'lp-name' }, tFn('collectionCurrent')),
-										h('span', { className: 'lp-sub' }, selectedLabel(tFn) ?? tFn('collectionNone'))),
-									h('button', {
-										type: 'button',
-										className: 'lp-btn',
-										disabled: current.collection.selectedId === null,
-										onClick: clearSelection,
-									}, tFn('collectionClear'))))),
-
+						// The page keeps its original shape: the panel table comes first
+						// and unchanged, and collection mode adds exactly one row at its
+						// top — it is a switch, not a section of its own.
 						h('section', { className: 'lp-section', 'data-section': 'panels' },
 							h('div', { className: 'lp-section-head' },
 								h('h2', { className: 'lp-h2' }, tFn('panelsTitle')),
 								h('span', { className: 'lp-hint' }, tFn('panelsHint'))),
 							h('div', { className: 'lp-card' },
+								h('div', {
+									className: 'lp-row',
+									'data-row': 'collection',
+									title: tFn('collectionHint'),
+								},
+								h('span', { className: 'lp-glyph', 'aria-hidden': 'true' }, h(CollectionIcon, { size: 15 })),
+								h('span', { className: 'lp-main' },
+									h('span', { className: 'lp-name' }, tFn('collectionName')),
+									h('span', { className: 'lp-sub' }, tFn('collectionSub'))),
+								h('span', {
+									className: 'lp-tag',
+									'data-tone': current.collection.enabled ? 'shown' : 'hidden',
+								}, current.collection.enabled ? tFn('collectionOn') : tFn('collectionOff')),
+								h(Switch, {
+									checked: current.collection.enabled,
+									label: tFn('collectionName') + ' — ' + (current.collection.enabled ? tFn('collectionOn') : tFn('collectionOff')),
+									onToggle: toggleCollection,
+								})),
 								rows.length === 0 ? h('div', { className: 'lp-empty' }, tFn('empty')) : rows)),
 
 						stale.length > 0

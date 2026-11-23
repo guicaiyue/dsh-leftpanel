@@ -101,8 +101,18 @@ class Element {
   addEventListener() {}
   removeEventListener() {}
   focus() {}
-  querySelector() {
-    return null
+  /** Just enough selector support for the tags the mount pass asks for. */
+  querySelector(selector) {
+    const wanted = String(selector).trim().toLowerCase()
+    const walk = (node) => {
+      for (const child of node.children) {
+        if (child.tagName.toLowerCase() === wanted) return child
+        const found = walk(child)
+        if (found !== null) return found
+      }
+      return null
+    }
+    return walk(this)
   }
   querySelectorAll() {
     return []
@@ -384,7 +394,7 @@ function buildDocument(nav) {
 function runCollection(options = {}) {
   const rows = options.rows ?? ['Plugins', 'Schedules', 'Archify']
   const entries = options.entries ?? rows.map((label, index) => ({ id: label.toLowerCase(), label, order: index }))
-  const nav = buildSidebar(rows)
+  const nav = options.nav ?? buildSidebar(rows)
   const documentStub = buildDocument(nav)
   const collection = { enabled: options.enabled ?? true, selectedId: options.selectedId ?? null }
 
@@ -462,10 +472,13 @@ function runCollection(options = {}) {
   }).apply(ctx)
 
   const collectionRow = nav.children.find((node) => node.getAttribute(COLLECTION_ATTR) !== null) ?? null
+  // The mount kicks off a harvest; tests that care wait on it, the rest ignore it.
+  const settled = new Promise((resolve) => setTimeout(resolve, 60))
   const card = documentStub.body.children.find((node) => node.getAttribute(CARD_ATTR) !== null) ?? null
   return {
     nav,
     collectionRow,
+    settled,
     card,
     rows: nav.children
       .filter((node) => node.getAttribute(COLLECTION_ATTR) === null && node.tagName === 'BUTTON')
@@ -587,4 +600,34 @@ test('the card is mounted outside the sidebar and starts hidden', () => {
   assert.ok(run.card !== null, 'the card must be mounted')
   assert.equal(run.card.hidden, true, 'it stays closed until the row is hovered')
   assert.equal(run.card.parentElement, run.nav.ownerDocument?.body ?? run.card.parentElement)
+})
+
+// ── the shell's overflow ("更多") folds into the card's second layer ──────
+
+test('the overflow launcher is folded away and restored with the mode', async () => {
+  const nav = buildSidebar(['Plugins', 'Schedules'])
+  // The shell renders the launcher as a <span> wrapper around a panel-row button.
+  const launcher = new Element('SPAN')
+  const launcherButton = new Element('BUTTON')
+  launcherButton.setAttribute('aria-label', 'More')
+  launcher.appendChild(launcherButton)
+  nav.appendChild(launcher)
+
+  const run = runCollection({ rows: ['Plugins', 'Schedules'], nav })
+  assert.equal(launcher.getAttribute('data-dsh-leftpanel-more-hidden'), '', 'the launcher is hidden while folding')
+  assert.equal(launcherButton.hasAttribute(HIDE_ATTR), false, 'the button itself is left to React')
+  // The harvest is asynchronous; let it settle so a stub failure cannot leak
+  // into the next test as an unhandled rejection.
+  await run.settled
+})
+
+test('turning the mode off puts the overflow launcher back', () => {
+  const nav = buildSidebar(['Plugins'])
+  const launcher = new Element('SPAN')
+  const launcherButton = new Element('BUTTON')
+  launcherButton.setAttribute('aria-label', 'More')
+  launcher.appendChild(launcherButton)
+  nav.appendChild(launcher)
+  runCollection({ enabled: false, rows: ['Plugins'], nav })
+  assert.equal(launcher.hasAttribute('data-dsh-leftpanel-more-hidden'), false, 'nothing stays folded')
 })
