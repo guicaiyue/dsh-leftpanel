@@ -41,5 +41,10 @@ docker compose restart dsh          # 改 client/index 后都要重启
 ## 现状
 
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
-- npm 上 `0.1.0` 是**原作者发布的版本，不含集合模式**；本仓库的改动还没有发版。
-- 没有 CI workflow，也没有提交插件市场的条目。
+- npm 包是 **`@xirizhi/dsh-leftpanel`**（0.1.0），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
+  不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
+- 发版：推 `v*` 标签 → `.github/workflows/release.yml`（质量门 → Release + 稳定别名
+  `dsh-leftpanel.tgz` → 有 `NPM_TOKEN` 就发 npm）。细节见 `docs/PUBLISH.md`。
+- 插件市场：`docs/market/guicaiyue__dsh-leftpanel.yml` + `scripts/market-submit.sh`（幂等）。
+  门禁要求仓库创建满 1 天、`dsh.bundle` 已声明、`category` 在允许列表里（本条目用 `ui`）。
+- OpenDesign 项目 `dsh-leftpanel` 直接挂在这个仓库（`baseDir` 就是仓库根，没有副本）。
