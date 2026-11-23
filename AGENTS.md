@@ -38,10 +38,31 @@ docker compose restart dsh          # 改 client/index 后都要重启
 - **条目逐行铺两列**（`splitColumns` 用 `index % 2`），不是列优先。列优先会让「更多」的
   两项一起落进右列、上下叠着，看起来仍像一个独立分组。
 
+## 部署
+
+两台机器都从 **GitHub Release 的构建物**装，不走插件市场：
+
+| 机器 | profile | 依赖写法 |
+| --- | --- | --- |
+| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz` |
+| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | `file:/vol1/1000/docker/dsh-npm/plugins-dist/dsh-leftpanel-<ver>.tgz` |
+
+NAS 直连 GitHub 会超时（拉 tarball 时 pnpm 报 TimeoutError），所以走「本地下载 → scp →
+按本地文件装」。升级时要**先把新 tarball 传过去再 add**，`file:` 指向的文件被替换后
+pnpm 不会自己更新。
+
+装完必须重启：宿主 `systemctl --user restart dsh`，NAS `systemctl restart dsh`。
+验证不看浏览器（无头 Chrome 处理不了 303 + HttpOnly cookie），直接问接口：
+
+```bash
+curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
+```
+
 ## 现状
 
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
 - npm 包是 **`@xirizhi/dsh-leftpanel`**（0.1.0），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
+  两台机器装的都是构建物（见上「部署」），原作者的包已经从两个 profile 卸掉。
   不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
 - 发版：推 `v*` 标签 → `.github/workflows/release.yml`（质量门 → Release + 稳定别名
   `dsh-leftpanel.tgz` → 有 `NPM_TOKEN` 就发 npm）。细节见 `docs/PUBLISH.md`。

@@ -47,11 +47,29 @@ node scripts/shot.mjs mock/collection-final.html out.png 1500 1000
 ## 安装
 
 ```bash
-# npm（推荐）
-dsh plugin --profile web add @xirizhi/dsh-leftpanel
-
-# 或直接用 GitHub Release 上的 tarball
+# 直接用 GitHub Release 上的构建物（推荐，不经过 npm）
 dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
+
+# 或从 npm
+dsh plugin --profile web add @xirizhi/dsh-leftpanel
+```
+
+机器直连不了 GitHub 时，先在能连的机器上下载，再传给目标机按本地文件装：
+
+```bash
+curl -sL -o dsh-leftpanel.tgz \
+  https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
+sha256sum dsh-leftpanel.tgz        # 与 Release 里的 SHA256SUMS.txt 比对
+scp dsh-leftpanel.tgz HOST:/path/to/plugins-dist/dsh-leftpanel-0.1.0.tgz
+ssh HOST 'cd /path/to/dsh && dsh plugin --profile web add file:/path/to/plugins-dist/dsh-leftpanel-0.1.0.tgz'
+```
+
+装完 `dsh plugin add` 会把这个包写进 profile 的 `dsh.profile.bundles`，**必须重启 dsh 才生效**
+（Host 半边在启动时注册 `/api/left-panel/state`，不重启就没有这个路由）。验证：
+
+```bash
+curl -s -b <cookie> http://127.0.0.1:<port>/api/left-panel/state
+# {"version":1,"hidden":[],"collection":{"enabled":true,"selectedId":null}}
 ```
 
 包声明了 `dsh.bundle.patch`，`dsh plugin add` 会自动把它写进 profile 的 `dsh.profile.bundles`。
