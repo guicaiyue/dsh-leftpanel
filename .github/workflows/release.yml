@@ -111,12 +111,24 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          PKG="dsh-leftpanel"
+          PKG="@xirizhi/dsh-leftpanel"
           VERSION="${{ steps.meta.outputs.version }}"
-          if npm view "${PKG}@${VERSION}" version >/dev/null 2>&1; then
-            echo "${PKG}@${VERSION} 已经在 npm 上，跳过发布"
+          # 「已发布」不能用 `npm view <pkg>@<ver>` 判：packument 刷新有几十秒到几分钟的延迟，
+          # 刚发过的版本会查不到，于是这里误判成「没发过」→ publish 撞 403
+          # （You cannot publish over the previously published versions）。
+          # 直接问那个版本的 tarball：它一被接受就能 200，比 packument 早得多。
+          TARBALL="https://registry.npmjs.org/@xirizhi%2fdsh-leftpanel/-/dsh-leftpanel-${VERSION}.tgz"
+          if [ "$(curl -sIL -o /dev/null -w '%{http_code}' "$TARBALL")" = "200" ]; then
+            echo "${PKG}@${VERSION} 的 tarball 已经能下载，跳过发布：$TARBALL"
           else
-            npm publish --access public
+            npm publish --access public || {
+              # 并发/重跑时仍可能撞 403：确认 tarball 已存在就当成功
+              if [ "$(curl -sIL -o /dev/null -w '%{http_code}' "$TARBALL")" = "200" ]; then
+                echo "publish 报错但 tarball 已存在，视为已发布"
+              else
+                exit 1
+              fi
+            }
           fi
           # 刚发上去的版本在 registry 元数据里有几十秒到几分钟的延迟，
           # 立刻 npm view 会 404，把一次成功的发布判成失败。轮询，超时只警告。
