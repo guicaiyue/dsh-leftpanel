@@ -54,7 +54,8 @@ dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases
 dsh plugin --profile web add @xirizhi/dsh-leftpanel
 ```
 
-机器直连不了 GitHub 时，先在能连的机器上下载，再传给目标机按本地文件装：
+机器确实连不了 GitHub 时，可以中转：先在能连的机器上下载，再传给目标机按本地文件装
+（注意 `file:` 指向的 tarball 被替换后 pnpm 不会自己更新，升级时要先传新文件再 `add`）：
 
 ```bash
 curl -sL -o dsh-leftpanel.tgz \

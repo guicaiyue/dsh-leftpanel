@@ -45,11 +45,13 @@ docker compose restart dsh          # 改 client/index 后都要重启
 | 机器 | profile | 依赖写法 |
 | --- | --- | --- |
 | arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz` |
-| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | `file:/vol1/1000/docker/dsh-npm/plugins-dist/dsh-leftpanel-<ver>.tgz` |
+| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | 同上（URL） |
 
-NAS 直连 GitHub 会超时（拉 tarball 时 pnpm 报 TimeoutError），所以走「本地下载 → scp →
-按本地文件装」。升级时要**先把新 tarball 传过去再 add**，`file:` 指向的文件被替换后
-pnpm 不会自己更新。
+两台都能直连 GitHub，不用中转。NAS 上第一次 `pnpm add <url>` 曾报过一次
+`TimeoutError: The operation was aborted due to timeout`，但同机 `curl`（302 / 0.46s）、
+`node fetch`（200 / 0.8s）、干净目录里 `pnpm add <url>`（5.3s）、以及重跑同一条 dsh 命令
+（2.1s）全部成功——**那是 pnpm 的一次瞬时超时，不是网络不通**。判定连通性用 curl 或
+node fetch，别拿一次 pnpm 失败当结论。
 
 装完必须重启：宿主 `systemctl --user restart dsh`，NAS `systemctl restart dsh`。
 验证不看浏览器（无头 Chrome 处理不了 303 + HttpOnly cookie），直接问接口：
