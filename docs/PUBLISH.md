@@ -30,7 +30,21 @@ npm view @xirizhi/dsh-leftpanel version --registry=https://registry.npmjs.org
 
 `prepublishOnly` 没配，所以**发版前自己跑一遍 verify**（CI 里是强制的）。
 
-## 2. 之后交给 CI 自动发
+## 2. 之后交给 CI 自动发（这是唯一的发版路径）
+
+**以后发版只在 GitHub CI 上做**，本地不再手动 `npm publish`。`release.yml` 的触发条件只有
+两个：推 `v*` 标签，或手动 `workflow_dispatch` 并填标签。本地唯一要做的是改版本号 + 打标签：
+
+```bash
+npm version patch --no-git-tag-version
+git commit -am "chore: release vX.Y.Z"
+git tag vX.Y.Z && git push origin main --tags
+```
+
+CI 会跑质量门、打包、建 Release、发 npm、自检稳定别名。本地手动 publish 只在
+「CI 还没配好、第一次发包」时用过一次（0.1.0 就是这么发的）。
+
+
 
 1. GitHub 仓库 → **Settings → Secrets and variables → Actions → New repository secret**
 2. Name: `NPM_TOKEN`；值取 `~/.npmrc` 里 `_authToken=` 后面那段（**不含**前缀）
