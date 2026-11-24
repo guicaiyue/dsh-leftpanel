@@ -30,44 +30,16 @@ npm view @xirizhi/dsh-leftpanel version --registry=https://registry.npmjs.org
 
 `prepublishOnly` 没配，所以**发版前自己跑一遍 verify**（CI 里是强制的）。
 
-## 2. 之后交给 CI 自动发（这是唯一的发版路径）
+## 2. 之后交给 CI（唯一发版路径）
 
-**以后发版只在 GitHub CI 上做**，本地不再手动 `npm publish`。`release.yml` 的触发条件只有
-两个：推 `v*` 标签，或手动 `workflow_dispatch` 并填标签。本地唯一要做的是改版本号 + 打标签：
+发版命令、`release.yml` 的行为、市场条目什么时候要重跑，都写在
+[`README.md §发版`](../README.md#发版)，这里不重复。
 
-```bash
-npm version patch --no-git-tag-version
-git commit -am "chore: release vX.Y.Z"
-git tag vX.Y.Z && git push origin main --tags
-```
-
-CI 会跑质量门、打包、建 Release、发 npm、自检稳定别名。本地手动 publish 只在
-「CI 还没配好、第一次发包」时用过一次（0.1.0 就是这么发的）。
-
-
+CI 只需要一个凭证：
 
 1. GitHub 仓库 → **Settings → Secrets and variables → Actions → New repository secret**
 2. Name: `NPM_TOKEN`；值取 `~/.npmrc` 里 `_authToken=` 后面那段（**不含**前缀）
-3. 之后打标签即自动发：
-
-   ```bash
-   npm version patch --no-git-tag-version
-   git commit -am "chore: release v0.2.0"
-   git tag v0.2.0 && git push origin main --tags
-   ```
-
-   `.github/workflows/release.yml` 会先建 GitHub Release（始终），再因为 `NPM_TOKEN`
-   存在而跑 `npm publish`。没配 secret 时这一步跳过，其它照常。
-
-4. 推完之后，只有一件事可能还要人做：**这一版改了插件的能力描述或截图**，就再跑一次
-
-   ```bash
-   scripts/market-submit.sh
-   ```
-
-   它把 `awesome-dsh-plugin` 的 `data/plugins/guicaiyue__dsh-leftpanel.yml` 与仓库里
-   `docs/market/…yml` 对齐并提 PR（幂等，条目没变时什么都不做）。条目里没有版本号字段，
-   `tarball` 指向稳定别名，所以**只有描述/截图这类内容变了才需要跑**。
+3. 没配这个 secret 时，`release.yml` 照常建 Release，只是跳过 `npm publish`。
 
 ## 3. 发布被 2FA 挡住（E403）
 

@@ -28,7 +28,7 @@ jobs:
           node-version: 24
 
       # 没有构建步骤、没有依赖：语法检查 + node --test。
-      # mock/ 是静态设计稿，不在门禁范围内。
+      # mock/ 也在门禁内：test/mock-integrity.mjs 钉住「只有一份原型 + 三个画板同步」。
       - name: Verify
         run: npm run verify
 

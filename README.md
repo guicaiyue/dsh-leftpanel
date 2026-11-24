@@ -36,13 +36,23 @@
 
 ![设置](https://raw.githubusercontent.com/guicaiyue/dsh-leftpanel/main/docs/screenshots/shot-settings.png?v=1)
 
-设计稿在 `mock/`：`collection-final.html` 是**定稿**（与实现一致），`index.html` 是索引页，
-`collection-A/B/C.html` 是早期的三个候选方向（保留作对照，已被定稿取代）。
+设计稿在 `mock/`：`collection-final.html` 是**定稿**（与实现一致，三个画板竖着排：收起 / 悬浮展开 / 空态），
+`index.html` 是索引页。`mock/` 里**只有这两个 html**，整个仓库也只有这两个——早期候选（A 单列面包屑、
+B 搜索分组、C 宫格、B2 徽标+双列的前身）的**可交互 html 已删掉**，只把截图留在
+`docs/proto/candidates/`（要从 git 历史取回见那里的 README）。原因：OpenDesign 的「设计文件」页按扩展名
+列页面、不看 `.gitignore`，四个候选摆着就是四个和定稿长得一样的完整页面，改原型时极容易点错。
 出题依据与实测令牌在 `docs/proto/collection-brief.md`（那份是当时的出题稿，顶部有差异说明）。
 
+定稿的图由脚本**按画板裁切**出图，改完原型跑一次就行（以前拿固定视口拍，三个画板叠在一页里，
+于是「展开」那张图实际是「收起」画板）：
+
 ```bash
-node scripts/shot.mjs mock/collection-final.html out.png 1500 1000
+node scripts/mock-shots.mjs   # → mock/shots/final-{closed,open,empty}-{dark,light}.png
 ```
+
+上面那几张 README 图与原型图是两回事，别按数字对不上就以为哪边错了：`docs/screenshots/*.png` 取自
+dsh-docker 容器（那台只装了 3 个面板插件，所以徽标 3、卡片 5 项），原型按本机 7 个面板画（徽标 7、
+卡片 9 项）。**徽标永远只数面板行、不含「更多」的两项**，两种数字都符合这一条。
 
 ## 安装
 
@@ -145,7 +155,7 @@ POST 是**局部更新**：只发 `{hidden}` 不会动 `collection`，反之亦�
 npm run verify     # 语法检查（scripts/syntax-check.mjs）+ node --test
 ```
 
-两组自检，共 38 项：
+三组自检，共 43 项：
 
 - `test/client-selfcheck.mjs`（19 项）—— 模块加载器契约、只注册设置分区（且**不**
   注册左侧行）、`t` 由 `locale` 座位提供而非 `inject` 注入、双语文案键一致、样式表
@@ -158,6 +168,10 @@ npm run verify     # 语法检查（scripts/syntax-check.mjs）+ node --test
   关闭时恢复且用户隐藏集合仍然生效、缺省配置视为开启、卡片挂在 `<body>` 上且初始
   关闭、外壳的「更多」启动器随模式折叠/恢复、条目**逐行**铺进两列、折叠轨只留图标
   并在有选中项时点一个角标、集合模式下观察器仍挂在 `body` 上。
+- `test/mock-integrity.mjs`（5 项）—— 钉住「原型只有一份」：全仓库只许
+  `mock/collection-final.html` 与 `mock/index.html` 两个 html（多一个候选就是多一个能点错
+  的完整页面）、索引页里的图与画板锚点都存在、三个画板条目数与徽标一致、键盘提示
+  逐字取自 `client.js`、卡片宽度等于 `CARD_WIDTH`。
 
 在容器里跑真机（`~/Projects/dsh-docker`）：
 
