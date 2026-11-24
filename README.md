@@ -71,8 +71,8 @@ dsh plugin --profile web add @xirizhi/dsh-leftpanel
 curl -sL -o dsh-leftpanel.tgz \
   https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
 sha256sum dsh-leftpanel.tgz        # 与 Release 里的 SHA256SUMS.txt 比对
-scp dsh-leftpanel.tgz HOST:/path/to/plugins-dist/dsh-leftpanel-0.1.0.tgz
-ssh HOST 'cd /path/to/dsh && dsh plugin --profile web add file:/path/to/plugins-dist/dsh-leftpanel-0.1.0.tgz'
+scp dsh-leftpanel.tgz HOST:/path/to/plugins-dist/dsh-leftpanel-<version>.tgz
+ssh HOST 'cd /path/to/dsh && dsh plugin --profile web add file:/path/to/plugins-dist/dsh-leftpanel-<version>.tgz'
 ```
 
 装完 `dsh plugin add` 会把这个包写进 profile 的 `dsh.profile.bundles`，**必须重启 dsh 才生效**

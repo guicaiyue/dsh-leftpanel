@@ -67,7 +67,7 @@ curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
 ## 现状
 
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
-- npm 包是 **`@xirizhi/dsh-leftpanel`**（0.1.0），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
+- npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.1），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
   两台机器装的都是构建物（见上「部署」），原作者的包已经从两个 profile 卸掉。
   不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
 - 发版：推 `v*` 标签 → `.github/workflows/release.yml`（质量门 → Release + 稳定别名
