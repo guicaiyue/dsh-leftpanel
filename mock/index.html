@@ -65,71 +65,44 @@
 <div class="wrap">
   <h1>DSH 左栏「集合」· 定稿</h1>
   <p class="lede">把 7 个面板入口收成一行「集合」：行上是数量徽标 + <code>集合 / 图标 名称</code>；首次点击不打开页面，悬浮从行右侧滑出双列卡片；选中后点集合直接打开该页，悬浮仍可换。</p>
-  <p class="meta">1440×900 · 侧栏 280px · 卡片左边缘 x=288 · 暗/亮两套 · 原型文件在 <code>mock/</code>，截图在 <code>mock/shots/</code>，几何与令牌见 <code>docs/proto/collection-brief.md</code></p>
+  <p class="meta">1440×900 · 侧栏 280px · 卡片左缘 x=288 · 卡片 448×235（9 项：左 5 右 4）· 原型 <code>mock/collection-final.html</code> · 本页六张图由 <code>node scripts/mock-shots.mjs</code> 按画板裁切出图 · 几何与令牌见 <code>docs/proto/collection-brief.md</code></p>
 
   <section class="dir">
     <div class="dir__head">
-      <span class="dir__tag">B2</span>
+      <span class="dir__tag">定稿</span>
       <span class="dir__name">数量徽标 + 单层双列卡片</span>
-      <span class="dir__pick">本次选定</span>
+      <span class="dir__pick">实现即此稿</span>
     </div>
-    <p class="dir__why">徽标告诉你有几个入口；卡片是一张单层双列清单：「更多」的两个条目就是列表最后两项，逐行铺进同一网格——没有分隔线、不分组、没有第二层弹窗，卡片高度只有 160px。代价是卡片宽到 448px。</p>
+    <p class="dir__why">徽标只数面板行（本机 7 个）；卡片是一张单层双列清单：「更多」的两个条目就是列表最后两项，逐行铺进同一网格——没有分隔线、不分组、没有第二层弹窗。9 项实测 448×235。</p>
     <div class="shots">
-      <a class="shot" href="collection-final.html"><img src="shots/final-closed-dark.png" alt="B2 收起 暗色" /><span>① 收起（已选 Horon 记忆）· 暗色</span></a>
-      <a class="shot" href="collection-final.html"><img src="shots/final-closed-dark.png" alt="B2 空态 暗色" /><span>② 空态：从未选过，点击不跳转 · 暗色</span></a>
-      <a class="shot" href="collection-final.html"><img src="shots/final-open-dark.png" alt="B2 展开 暗色" /><span>③ 悬浮展开（已选打勾）· 暗色</span></a>
-      <a class="shot" href="collection-final.html"><img src="shots/final-open-light.png" alt="B2 收起 亮色" /><span>① 收起 · 亮色</span></a>
-      <a class="shot" href="collection-final.html"><img src="shots/final-open-light.png" alt="B2 空态 亮色" /><span>② 空态 · 亮色</span></a>
-      <a class="shot" href="collection-final.html"><img src="shots/final-open-light.png" alt="B2 展开 亮色" /><span>③ 悬浮展开 · 亮色</span></a>
+      <a class="shot" href="collection-final.html#state-closed"><img src="shots/final-closed-dark.png" alt="定稿 收起 暗色" /><span>① 收起（已选 Horon 记忆）· 暗色</span></a>
+      <a class="shot" href="collection-final.html#state-closed"><img src="shots/final-closed-light.png" alt="定稿 收起 亮色" /><span>① 收起 · 亮色</span></a>
+      <a class="shot" href="collection-final.html#state-open"><img src="shots/final-open-dark.png" alt="定稿 悬浮展开 暗色" /><span>② 悬浮展开（已选打勾）· 暗色</span></a>
+      <a class="shot" href="collection-final.html#state-open"><img src="shots/final-open-light.png" alt="定稿 悬浮展开 亮色" /><span>② 悬浮展开 · 亮色</span></a>
+      <a class="shot" href="collection-final.html#state-empty"><img src="shots/final-empty-dark.png" alt="定稿 空态 暗色" /><span>③ 空态：从未选过，首次点击不跳转 · 暗色</span></a>
+      <a class="shot" href="collection-final.html#state-empty"><img src="shots/final-empty-light.png" alt="定稿 空态 亮色" /><span>③ 空态 · 亮色</span></a>
     </div>
   </section>
 
   <section class="dir">
     <div class="dir__head">
-      <span class="dir__tag">A</span>
-      <span class="dir__name">面包屑行 + 单列卡片</span>
-      <span class="dir__pick">备选</span>
+      <span class="dir__tag">两类图</span>
+      <span class="dir__name">原型截图 ≠ 真机截图</span>
+      <span class="dir__pick">数字不同不是矛盾</span>
     </div>
-    <p class="dir__why">行里直接读出「现在在哪个插件」，卡片只是换页面的开关；和 DSH 自己的「更多」浮层同族，装进真界面不显得是外挂。列表一长就要滚动，没有搜索。</p>
-    <div class="shots">
-      <a class="shot" href="collection-A.html"><img src="shots/A-dark.png" alt="方向 A 暗色" /><span>打开原型 · 暗色</span></a>
-      <a class="shot" href="collection-A.html"><img src="shots/A-light.png" alt="方向 A 亮色" /><span>打开原型 · 亮色（页内可切换）</span></a>
-    </div>
-  </section>
-
-  <section class="dir">
-    <div class="dir__head">
-      <span class="dir__tag">B</span>
-      <span class="dir__name">（变体）数量徽标 + 搜索分组卡片</span>
-    </div>
-    <p class="dir__why">7 个徽标说明里面还有多少东西；卡片带搜索与「面板 / 工具」分组，条目变多也不难找。代价是卡片比 A 重，行也多了个数字。</p>
-    <div class="shots">
-      <a class="shot" href="collection-B.html"><img src="shots/B-dark.png" alt="方向 B 暗色" /><span>打开原型 · 暗色</span></a>
-      <a class="shot" href="collection-B.html"><img src="shots/B-light.png" alt="方向 B 亮色" /><span>打开原型 · 亮色（页内可切换）</span></a>
-    </div>
-  </section>
-
-  <section class="dir">
-    <div class="dir__head">
-      <span class="dir__tag">C</span>
-      <span class="dir__name">宫格卡片（2 列 × 4 行）</span>
-    </div>
-    <p class="dir__why">信息密度最高，一眼看全 8 个入口，切换不用上下扫。代价是每个名字下面的图标格子占地方，超过 8 项就得在卡片里滚，且和 DSH 现有菜单家族不像。</p>
-    <div class="shots">
-      <a class="shot" href="collection-C.html"><img src="shots/C-dark.png" alt="方向 C 暗色" /><span>打开原型 · 暗色</span></a>
-      <a class="shot" href="collection-C.html"><img src="shots/C-light.png" alt="方向 C 亮色" /><span>打开原型 · 亮色（页内可切换）</span></a>
-    </div>
+    <p class="dir__why">上面六张是<strong>原型渲染</strong>，一张画板一张图，尺寸等于画板；README 与插件市场用的是<strong>真机截图</strong> <code>docs/screenshots/*.png</code>，取自 dsh-docker 容器——那台只装了 3 个面板插件，所以徽标是 3、卡片 5 项。本页按本机 7 个面板画：徽标 7、卡片 9 项。<strong>徽标永远只数面板行，不含「更多」的两项</strong>，两种数字都符合这一条。</p>
   </section>
 
   <div class="note">
-    <b>这次的落点（B2）：</b>
+    <b>这次的落点（定稿 = 实现）：</b>
     <ol>
-      <li><b>行</b>：<code>集合</code> + 徽标 <code>7</code> + <code>/</code> + 所选图标与名称 + 右侧 chevron；36px 高，和其它面板行同几何。</li>
-      <li><b>卡片</b>：448×197，两列各 216，中缝 1px 发丝线；每列 4 项、项高 36；已选项左侧 2px 强调条 + 淡底 + 600 字重。</li>
-      <li><b>键盘</b>：↑↓ 列内移动、←→ 换列、Enter 打开、Esc 关闭并回焦到行。</li>
-      <li><b>状态机不变</b>：空态点击不跳转；选中后点击直达该页；悬浮始终可换；折叠成 72px 图标轨时只留集合图标 + 所选图标角标。</li>
+      <li><b>行</b>：<code>集合</code> + 徽标（面板数）+ <code>/</code> + 所选图标与名称 + 右端「面板 + 向右箭头」标记；36px 高，与其它面板行同几何。</li>
+      <li><b>卡片</b>：448×235 · 两列等宽 · 中缝 1px 发丝线上下各留 8px · 9 项逐行铺（左 5、右 4）· 项高 36。</li>
+      <li><b>徽标口径</b>：只数面板行，不含「更多」两项——9 项的卡片显示 7；容器里 3 个面板就显示 3。</li>
+      <li><b>键盘</b>：<code>↑↓</code> 逐行走、<code>←→</code> 换列、<code>Enter</code> 打开、<code>Esc</code> 关闭并回焦到行；不加第三列。</li>
+      <li><b>尚未实现</b>：条目多到越过视口底部时不会列内滚动（<code>placeCard</code> 只把卡片顶部钳进视口）。到十几个入口时先补 <code>max-height</code> + 列内滚动。</li>
     </ol>
-    超过 8 项时列内滚动而不加第三列；要搜索就在卡片顶部加 32px 搜索条（B 变体原样），宽度不变、高度 +40。A（单列）与 C（宫格）保留作对照。
+    早期候选（A 单列面包屑 · B 搜索分组 · C 宫格 · B2 徽标+双列的前身）只剩截图，在 <code>docs/proto/candidates/</code>，可交互的 html 已从仓库删掉、留 git 历史。<b>整个仓库现在只有两个 html</b>：这一页和定稿——没有第二个「像定稿」的页面可点错。改完原型重出图：<code>node scripts/mock-shots.mjs</code>。
   </div>
 </div>
 </body>

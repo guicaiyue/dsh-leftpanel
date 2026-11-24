@@ -430,18 +430,22 @@
     margin-bottom:12px;
   }
   .spec-list{display:flex;flex-direction:column;gap:12px;counter-reset:s}
+  /* 三个子项各就各位：编号占第 1 列两行；标题与正文都在第 2 列。
+     不加 grid-column/grid-row 的话，<b> 会落到 1fr、<span> 落到 20px 那列，
+     正文就成一个字一行的竖条（2026-11-24 修）。 */
   .spec-list li{
     counter-increment:s;
-    display:grid;grid-template-columns:20px 1fr;gap:8px;
+    display:grid;grid-template-columns:20px 1fr;gap:2px 8px;
     font-size:13.5px;line-height:1.7;color:var(--text-dim);
   }
   .spec-list li::before{
     content:counter(s);
+    grid-column:1;grid-row:1 / span 2;
     font-family:var(--mono);font-size:11px;line-height:20px;
     color:var(--text-mute);
   }
-  .spec-list b{display:block;color:var(--text);font-weight:600;font-size:13.5px}
-  .spec-list span{display:block}
+  .spec-list b{grid-column:2;grid-row:1;display:block;color:var(--text);font-weight:600;font-size:13.5px}
+  .spec-list span{grid-column:2;grid-row:2;display:block}
 
   .spec-dims{display:flex;flex-direction:column;gap:0}
   .spec-dims > div{
@@ -542,7 +546,7 @@
 <main class="frames">
 
   <!-- ============ 状态一：收起 ============ -->
-  <section class="frame" aria-labelledby="f1">
+  <section class="frame" id="state-closed" aria-labelledby="f1">
     <h2 class="frame-title" id="f1"><span class="dot"></span>收起</h2>
     <div class="device">
       <aside class="sidebar" aria-label="左侧栏">
@@ -561,7 +565,7 @@
             <span class="row-label">集合</span>
             <span class="badge">7</span>
             <span class="slash" aria-hidden="true">/</span>
-            <svg class="ico ico--sel" aria-hidden="true"><use href="#i-layers"/></svg>
+            <svg class="ico ico--sel" aria-hidden="true"><use href="#i-brain"/></svg>
             <span class="row-value">Horon 记忆</span>
             <svg class="ico chev" aria-hidden="true"><use href="#i-open-side"/></svg>
           </button>
@@ -623,7 +627,7 @@
   </section>
 
   <!-- ============ 状态二：悬浮展开 ============ -->
-  <section class="frame" aria-labelledby="f2">
+  <section class="frame" id="state-open" aria-labelledby="f2">
     <h2 class="frame-title" id="f2"><span class="dot dot--on"></span>悬浮展开</h2>
     <div class="device">
       <aside class="sidebar" aria-label="左侧栏">
@@ -642,7 +646,7 @@
             <span class="row-label">集合</span>
             <span class="badge">7</span>
             <span class="slash" aria-hidden="true">/</span>
-            <svg class="ico ico--sel" aria-hidden="true"><use href="#i-layers"/></svg>
+            <svg class="ico ico--sel" aria-hidden="true"><use href="#i-brain"/></svg>
             <span class="row-value">Horon 记忆</span>
             <svg class="ico chev" aria-hidden="true"><use href="#i-open-side"/></svg>
           </button>
@@ -704,28 +708,29 @@
       <div class="popover" role="dialog" aria-label="集合菜单">
         <div class="pop-cols">
           <ul class="pop-list pop-col" aria-label="第 1 列">
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg><span>插件</span></button></li>
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-blocks"/></svg><span>架构建模</span></button></li>
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg><span>创建你的插件</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg><span>插件</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg><span>自动化任务</span></button></li>
+            <li><button class="pop-item is-selected" type="button" aria-current="true"><svg class="ico" aria-hidden="true"><use href="#i-brain"/></svg><span>Horon 记忆</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span>Purge</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg><span>创建你的插件</span></button></li>
           </ul>
           <ul class="pop-list pop-col" aria-label="第 2 列">
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg><span>自动化任务</span></button></li>
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-store"/></svg><span>浏览更多插件</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-store"/></svg><span>插件市场</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-blocks"/></svg><span>架构建模</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg><span>上下文洞察</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg><span>浏览更多插件</span></button></li>
           </ul>
         </div>
         <div class="pop-foot">
-          <span>↑↓ 选择 · ←→ 换行内挪</span>
+          <span>↑↓ 选择 · ←→ 换列</span>
           <span><kbd>Enter</kbd> 打开 · <kbd>Esc</kbd> 关闭</span>
         </div>
       </div>
     </div>
   </section>
 
-</main>
-
-
   <!-- ============ 状态三：空态（从未选过） ============ -->
-  <section class="frame" aria-labelledby="f2">
+  <section class="frame" id="state-empty" aria-labelledby="f3">
     <h2 class="frame-title" id="f3"><span class="dot"></span>空态 · 从未选过（首次点击不跳转）</h2>
     <div class="device">
       <aside class="sidebar" aria-label="左侧栏">
@@ -803,22 +808,29 @@
       <div class="popover" role="dialog" aria-label="集合菜单">
         <div class="pop-cols">
           <ul class="pop-list pop-col" aria-label="第 1 列">
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg><span>插件</span></button></li>
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-blocks"/></svg><span>架构建模</span></button></li>
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg><span>创建你的插件</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg><span>插件</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg><span>自动化任务</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-brain"/></svg><span>Horon 记忆</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span>Purge</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg><span>创建你的插件</span></button></li>
           </ul>
           <ul class="pop-list pop-col" aria-label="第 2 列">
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg><span>自动化任务</span></button></li>
-            <li><button class="pop-item" type="button"><svg class="ico" aria-hidden="true"><use href="#i-store"/></svg><span>浏览更多插件</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-store"/></svg><span>插件市场</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-blocks"/></svg><span>架构建模</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg><span>上下文洞察</span></button></li>
+            <li><button class="pop-item" type="button" aria-current="false"><svg class="ico" aria-hidden="true"><use href="#i-more"/></svg><span>浏览更多插件</span></button></li>
           </ul>
         </div>
         <div class="pop-foot">
-          <span>↑↓ 选择 · ←→ 换行内挪</span>
+          <span>↑↓ 选择 · ←→ 换列</span>
           <span><kbd>Enter</kbd> 打开 · <kbd>Esc</kbd> 关闭</span>
         </div>
       </div>
     </div>
   </section>
+
+</main>
+
 <section class="spec" aria-labelledby="spec-title">
   <h2 id="spec-title">定稿 · 徽标 + 单层双列卡片</h2>
   <p class="lead">行上保留数量徽标与面包屑；卡片只有一层——面板入口与外壳的溢出条目在同一个网格里逐行铺开。</p>
@@ -829,15 +841,15 @@
       <ol class="spec-list">
         <li>
           <b>什么时候最好用</b>
-          <span>入口就这七八个、想一眼看全又想随时知道「一共有几个」。徽标给总量，逐行铺两列让所有条目（含「更多」的两项）都不用滚动，卡片高度只有 160px。</span>
+          <span>入口就这七八个、想一眼看全又想随时知道「一共有几个」。徽标给面板数（7），逐行铺两列让所有条目（含「更多」的两项共 9 项）都不用滚动，实测卡片 448×235。</span>
         </li>
         <li>
           <b>代价</b>
-          <span>卡片宽 448px，比单列多占 132px 内容区；「更多」的条目和面板项长得一模一样，靠位置（最后两项）而不是靠视觉分组来区分它们不是面板。</span>
+          <span>卡片宽 448px，比外壳自带的「更多」菜单（288）宽 160；「更多」的条目和面板项长得一模一样，靠位置（最后两项）而不是靠视觉分组来区分它们不是面板。</span>
         </li>
         <li>
           <b>什么时候会后悔</b>
-          <span>入口涨到 12 个以上——两列也要滚动，这时该加搜索（早期方向 B 的顶部搜索条）或改分组，而不是继续加宽卡片。</span>
+          <span>入口涨到十几个——两列也铺不下一屏。当前实现没有列内滚动（<code>placeCard</code> 只把卡片顶部钳进视口），所以条目越过视口底部会被裁掉；到那时该先补 <code>max-height</code> + 列内滚动，再考虑搜索或分组，而不是继续加宽卡片。</span>
         </li>
       </ol>
     </div>
@@ -846,9 +858,9 @@
       <h3>关键尺寸（与实现一致）</h3>
       <dl class="spec-dims">
         <div><dt>集合行</dt><dd>高 36 · 圆角 12 · 内边距 7/9 · 图标 16 · 间距 6 · 字号 14</dd></div>
-        <div><dt>徽标</dt><dd>高 16 · 最小宽 18 · 圆角 6 · 字号 11 · 等宽数字</dd></div>
+        <div><dt>徽标</dt><dd>高 16 · 最小宽 18 · 圆角 6 · 字号 11 · 等宽数字；<b>只数面板行</b>，不含「更多」的两个条目——所以 9 项的卡片显示 7</dd></div>
         <div><dt>斜杠</dt><dd>三级文字色 · 两侧各 6px（由 6px 行内间距给出）</dd></div>
-        <div><dt>卡片</dt><dd>宽 448 · 圆角 16 · 内边距 6 · 发丝描边 · 三层阴影</dd></div>
+        <div><dt>卡片</dt><dd>宽 448 · 高 235（9 项：左 5 右 4）· 圆角 16 · 内边距 6 · 发丝描边 · 两层阴影（3px/8px 近影 + 20px 柔光）</dd></div>
         <div><dt>两列</dt><dd>每列等宽 · 中缝 1px 发丝线，上下各留 8px</dd></div>
         <div><dt>卡片项</dt><dd>高 36 · 圆角 12 · 图标 16 · 字号 14 · hover 底色</dd></div>
         <div><dt>选中态</dt><dd>左侧 2×16 强调条 + 淡底 + 名称 600</dd></div>
@@ -860,7 +872,7 @@
 
   <p class="spec-note">
     键盘：<code>↑↓</code> 按视觉顺序走（逐行）、<code>←→</code> 在同一行里左右挪、<code>Enter</code> 打开、
-    <code>Esc</code> 关闭并把焦点还给行。超过 8 项时列内滚动（卡片最大高 70vh），不加第三列。
+    <code>Esc</code> 关闭并把焦点还给行。不加第三列；列内滚动这一条<b>尚未实现</b>（见上「什么时候会后悔」）。
     折叠成 36px 图标轨时只留集合图标，有选中项时右下角点一个小圆点。
   </p>
 </section>
