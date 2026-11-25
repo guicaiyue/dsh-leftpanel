@@ -61,6 +61,8 @@ window.__ModuleLoader__.load({
 		const CARD_ATTR = 'data-dsh-leftpanel-card'
 		/** Attribute marking the shell's own "更多" launcher while it is folded away. */
 		const MORE_HIDE_ATTR = 'data-dsh-leftpanel-more-hidden'
+		/** Attribute pinning the row list to the top of the sidebar's scroll area. */
+		const PIN_ATTR = 'data-dsh-leftpanel-pinned'
 		/** Attribute marking the nested card that the card's "更多" item opens. */
 		const SUB_ATTR = 'data-dsh-leftpanel-subcard'
 		/** Boot mirror of the collection setting, next to the hidden-set mirror. */
@@ -204,6 +206,12 @@ window.__ModuleLoader__.load({
 			// The shell's own overflow launcher folds into the card as its second
 			// layer; it is a <span> wrapper, so the hide rule targets the wrapper.
 			`[${MORE_HIDE_ATTR}]{display:none !important}`,
+			// Collection mode folds every panel row, so the row list is exactly the
+			// collection row's height — pinning the *list* pins that row. The session
+			// list below keeps scrolling underneath it; the opaque background (plus the
+			// shadow filling the shell's own 8px bottom margin) is what keeps the two
+			// from bleeding into each other. Dropping the attribute restores the shell.
+			`[${PIN_ATTR}]{position:sticky;top:0;z-index:6;background:var(--dsw-specific-sidebar-fill,var(--dsw-alias-bg-layer-1));box-shadow:0 8px 0 0 var(--dsw-specific-sidebar-fill,var(--dsw-alias-bg-layer-1))}`,
 			// Reading the real overflow menu means opening it; this keeps that
 			// read invisible instead of flashing a menu anchored to a hidden row.
 			'html[data-dsh-leftpanel-harvest] [role="menu"]{opacity:0 !important;pointer-events:none !important}',
@@ -1148,6 +1156,8 @@ window.__ModuleLoader__.load({
 
 				/** Remove the injected row and card, if they exist. */
 				function unmountCollection() {
+					const rowList = findRowList()
+					if (rowList !== null) rowList.removeAttribute(PIN_ATTR)
 					const launcher = findMoreLauncher()
 					if (launcher !== null) launcher.wrapper.removeAttribute(MORE_HIDE_ATTR)
 					if (collectionRow !== null) collectionRow.remove()
@@ -1173,6 +1183,10 @@ window.__ModuleLoader__.load({
 					const model = readRowModel()
 					if (model === null) return false
 					const { rowList, items } = model
+					// Pin the list, not the row: the shell owns the list's box, and with every
+					// panel row folded away that box is the collection row. It stays at the top
+					// of the scroll area while the session list scrolls under it.
+					rowList.setAttribute(PIN_ATTR, '')
 					const signature = items.map((item) => item.id + ':' + item.label).join('|') + '@' + (collection.selectedId ?? '')
 					if (collectionRow === null || collectionRow.parentNode !== rowList) {
 						collectionRow?.remove()

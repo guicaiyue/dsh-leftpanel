@@ -711,6 +711,21 @@ test('collection mode mounts and folds the 0.2.x markup', () => {
   )
 })
 
+test('collection mode pins the row list, and turning it off unpins it', () => {
+  // The session list below scrolls, the collection row must not scroll away with
+  // it. The sticky rule lives on the row list (its box *is* the collection row
+  // once every panel row is folded), so the attribute is the whole mechanism —
+  // and it has to come off again, or the shell keeps a sticky panel list in
+  // plain mode.
+  const PIN_ATTR = 'data-dsh-leftpanel-pinned'
+  const on = runCollection({ wrapped: true })
+  assert.equal(on.nav.hasAttribute(PIN_ATTR), true, 'the row list is pinned while folding')
+  assert.equal(on.collectionRow.hasAttribute(PIN_ATTR), false, 'the row itself is not pinned')
+
+  const off = runCollection({ wrapped: true, enabled: false })
+  assert.equal(off.nav.hasAttribute(PIN_ATTR), false, 'plain mode leaves the list alone')
+})
+
 test('the collection row is not read back as a panel entry in either markup', () => {
   for (const wrapped of [false, true]) {
     const run = runCollection({ wrapped, rows: ['Plugins'] })

@@ -1,6 +1,6 @@
 {
   "name": "@xirizhi/dsh-leftpanel",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": false,
   "description": "DeepSeek Harness plugin: fold every left-sidebar panel entry into one \"Collection\" row with a two-column card, and hide or show each panel entry. · DSH 插件：把左侧菜单的面板入口收进一行「集合」（悬浮展开双列卡片，默认开启），并逐个隐藏或显示面板入口。",
   "type": "module",
