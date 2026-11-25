@@ -42,7 +42,7 @@ B 搜索分组、C 宫格、B2 徽标+双列的前身）的**可交互 html 已�
 `docs/proto/candidates/`（要从 git 历史取回见那里的 README）。原因：OpenDesign 的「设计文件」页按扩展名
 列页面、不看 `.gitignore`，四个候选摆着就是四个和定稿长得一样的完整页面，改原型时极容易点错。
 实测令牌与几何只有一处权威：`mock/collection-final.html` 的 `:root`（暗/亮两套）与页末的
-`<section class="spec">`；2026-11-25 删掉了过期的出题稿 `docs/proto/collection-brief.md`。
+`<section class="spec">`。早期的出题稿已删（要看出题依据见 git 历史）。
 
 定稿的图由脚本**按画板裁切**出图，改完原型跑一次就行（以前拿固定视口拍，三个画板叠在一页里，
 于是「展开」那张图实际是「收起」画板）：
