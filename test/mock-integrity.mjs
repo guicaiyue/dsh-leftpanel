@@ -31,8 +31,10 @@ const read = (path) => fs.readFileSync(path, 'utf8')
  * Every `.html` in the repo, minus installed trees and dot-directories.
  *
  * Dot-directories are tool metadata, not prototypes: `.od-frames/` is written by
- * OpenDesign (three device frames, gitignored), and OpenDesign's own file index
- * skips them too — so counting them here would fail on a clean checkout.
+ * OpenDesign (three device frames, gitignored, and deleted from the working tree
+ * on 2026-11-25 — OD rewrites it the next time the project is opened), and
+ * OpenDesign's own file index skips them too — so counting them here would fail
+ * on a clean checkout.
  */
 function htmlFiles(dir = ROOT, out = []) {
 	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -3,9 +3,8 @@
 DSH 插件 `@xirizhi/dsh-leftpanel`：把左侧菜单的面板入口收进一行「集合」，并逐个隐藏或显示。
 现役行为、存储格式与真机截图见 [`README.md`](README.md)；定稿原型在
 [`mock/collection-final.html`](mock/collection-final.html)（索引页 `mock/index.html`，
-出图 `node scripts/mock-shots.mjs`）；设计出题稿（已过期，仅留依据）在
-[`docs/proto/collection-brief.md`](docs/proto/collection-brief.md)，早期候选只留截图在
-[`docs/proto/candidates/`](docs/proto/candidates/)（可交互 html 已删，见那里的 README）。
+出图 `node scripts/mock-shots.mjs`；令牌与几何只在它的 `:root` 与页末 `<section class="spec">` 里），
+早期候选只留截图在 [`docs/proto/candidates/`](docs/proto/candidates/)（可交互 html 已删，见那里的 README）。
 **全仓库只允许两个 html**（`mock/collection-final.html` + `mock/index.html`），`test/mock-integrity.mjs` 钉着。
 
 ## 怎么跑
