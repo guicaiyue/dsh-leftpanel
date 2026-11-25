@@ -778,3 +778,15 @@ test('the row observer stays attached while collection mode is on', () => {
   // observer on `hidden.length` alone left it detached and the rail stale.
   assert.match(src, /hidden\.length === 0 && collection\.enabled !== true/, 'collection mode keeps the observer on')
 })
+
+test('a repaint is scheduled even when requestAnimationFrame never fires', () => {
+  // `requestAnimationFrame` does not fire in a background tab or in a window the
+  // compositor never paints, and a panel row can mount late there too (a plugin
+  // registering after the sidebar's first paint). With rAF as the only hook the
+  // pass stalls and that row stays unfolded until the tab is shown again, so the
+  // timer must be armed unconditionally rather than as an `else` branch.
+  const src = fs.readFileSync(CLIENT, 'utf8')
+  assert.match(src, /requestAnimationFrame\(run\)/, 'the frame hook stays')
+  assert.match(src, /requestAnimationFrame\(run\)\s*\n\s*window\.setTimeout\(run, 32\)/, 'the timer is armed alongside it, not instead of it')
+  assert.doesNotMatch(src, /else window\.setTimeout\(run, 32\)/, 'the timer is no longer an either/or fallback')
+})

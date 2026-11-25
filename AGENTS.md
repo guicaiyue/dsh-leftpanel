@@ -12,7 +12,7 @@ DSH 插件 `@xirizhi/dsh-leftpanel`：把左侧菜单的面板入口收进一行
 
 ```bash
 node --check index.js && node --check client/client.js   # 语法
-node --test "test/*.mjs"                                  # 47 项自检
+node --test "test/*.mjs"                                  # 48 项自检
 ```
 
 容器里跑真机（本机 `~/Projects/dsh-docker`）：

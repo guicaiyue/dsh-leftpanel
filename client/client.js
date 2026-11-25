@@ -1574,12 +1574,19 @@ window.__ModuleLoader__.load({
 						if (queued) return
 						queued = true
 						const run = () => {
+							// Both hooks are usually pending; the first one wins.
+							if (!queued) return
 							queued = false
 							refreshPanels()
 							paint()
 						}
+						// `requestAnimationFrame` is the tidy hook, but it does not fire in a
+						// background tab and in a window the compositor never paints — and a
+						// row can still mount late there (a plugin that registers its panel
+						// after the sidebar's first paint). A timer keeps the pass honest in
+						// both, so a late row folds without waiting for a repaint.
 						if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(run)
-						else window.setTimeout(run, 32)
+						window.setTimeout(run, 32)
 					}
 					const ensure = () => {
 						// Collection mode hides rows too, and its `hidden` set is the
