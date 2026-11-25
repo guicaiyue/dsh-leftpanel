@@ -67,3 +67,7 @@ Read and write、All packages、**勾上 `Bypass two-factor authentication`**（
 
 `npm:` 字段不要手写，市场会从 registry 自动采集；它要求 npm 上的包的
 `repository` 指回同一个 GitHub 仓库，本仓库已经指对了。
+
+**首次提交已完成**：PR #18149 于 2026-11-24 合并，条目现役在
+`awesome-dsh-plugin/data/plugins/guicaiyue__dsh-leftpanel.yml`。之后只有描述、截图或安装方式变了才重跑
+`scripts/market-submit.sh`；只是发版（版本号变）不需要动条目——`tarball` 指向稳定别名。

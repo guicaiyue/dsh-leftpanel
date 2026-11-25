@@ -64,6 +64,10 @@ dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases
 dsh plugin --profile web add @xirizhi/dsh-leftpanel
 ```
 
+已在 [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) 收录（2026-11-24 合并，PR #18149），
+装了 `dshmarket` 的机器也可以直接在插件市场里装。Release 的 `dsh-leftpanel.tgz` 与 npm 上同名版本内容相同
+（sha512 一致），选哪条只影响升级方式：Release URL 钉在地址里的版本，npm 依赖按版本号走。
+
 机器确实连不了 GitHub 时，可以中转：先在能连的机器上下载，再传给目标机按本地文件装
 （注意 `file:` 指向的 tarball 被替换后 pnpm 不会自己更新，升级时要先传新文件再 `add`）：
 

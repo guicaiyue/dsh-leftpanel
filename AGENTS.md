@@ -44,14 +44,17 @@ docker compose restart dsh          # 改 client/index 后都要重启
 
 ## 部署
 
-两台机器都从 **GitHub Release 的构建物**装，不走插件市场：
+两台机器都**不经过插件市场 UI** 装，但来源分叉（2026-11-25 按 profile 的 `package.json` 与 `pnpm-lock.yaml` 核过）：
 
-| 机器 | profile | 依赖写法 |
+| 机器 | profile | 依赖写法（实测值） |
 | --- | --- | --- |
-| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz` |
-| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | 同上（URL） |
+| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `https://github.com/guicaiyue/dsh-leftpanel/releases/download/v0.1.1/dsh-leftpanel.tgz` |
+| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.1`（走 npm，sha512 与 Release 包相同） |
 
-NAS 访问 GitHub **走 mihomo 代理、不是直连**，节点抖动时 `pnpm add <url>` 会报
+写 `latest` 的地址也只在**再次 `dsh plugin add` 时**才会动：pnpm 把当时解析到的 URL 和 integrity 钉进 lock，
+升级永远是一次显式 add + 重启，不会自己跟。
+
+NAS 访问 GitHub **走 mihomo 代理、不是直连**（现在装的是 npm 包，下面这段是以后要从 GitHub URL 装时的排查顺序），节点抖动时 `pnpm add <url>` 会报
 `TimeoutError`。一次失败先复现（`curl -sI` 或 `node fetch` 看 HTTP 状态）再下结论，别换绕路
 方案；反复失败按这个顺序查：`/dev/tcp/github.com/443` → HTTP 状态 → 代理节点健康
 （`curl -H "Authorization: Bearer <secret>" http://127.0.0.1:9090/proxies`，secret 在
@@ -68,12 +71,14 @@ curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
 
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
 - npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.1），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
-  两台机器装的都是构建物（见上「部署」），原作者的包已经从两个 profile 卸掉。
+  两台机器装的都是 0.1.1，但宿主是 Release 构建物、NAS 是 npm 包（见上「部署」），原作者的包已经从两个 profile 卸掉。
   不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
 - 发版：推 `v*` 标签 → `.github/workflows/release.yml`（质量门 → Release + 稳定别名
   `dsh-leftpanel.tgz` → 有 `NPM_TOKEN` 就发 npm）。细节见 `docs/PUBLISH.md`。
 - 插件市场：`docs/market/guicaiyue__dsh-leftpanel.yml` + `scripts/market-submit.sh`（幂等）。
   门禁要求仓库创建满 1 天、`dsh.bundle` 已声明、`category` 在允许列表里（本条目用 `ui`）。
+  **2026-11-24 已收录**：PR #18149 合进上游 `data/plugins/guicaiyue__dsh-leftpanel.yml`，README 第 972 行已生成条目；
+  之后只有描述、截图或安装方式变了才重跑，别为重提 PR 再跑一遍脚本。
 - OpenDesign 项目 `dsh-leftpanel` 直接挂在这个仓库（`baseDir` 就是仓库根，没有副本）。
   **OD 的「设计文件」按扩展名列页面、不看 `.gitignore`**：多留一个 html 就是多一个能点错的
   完整页面——这就是「全仓库只允许两个 html」的由来（`test/mock-integrity.mjs` 钉着）。
