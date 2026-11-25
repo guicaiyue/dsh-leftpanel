@@ -64,7 +64,7 @@ dsh plugin --profile web add @xirizhi/dsh-leftpanel
 dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
 ```
 
-**装完要不要重启**：只有 `client/client.js` 变的版本（0.1.2、0.1.3 都是）装完**刷新页面**就是新版，
+**装完要不要重启**：只有 `client/client.js` 变的版本（0.1.2–0.1.4 都是）装完**刷新页面**就是新版，
 不用动 dsh；`index.js`（Host：`/api/left-panel/state` 路由与状态文件）变了则必须
 `systemctl --user restart dsh`，那段代码在进程启动时加载。
 
@@ -188,19 +188,22 @@ POST 是**局部更新**：只发 `{hidden}` 不会动 `collection`，反之亦�
 npm run verify     # 语法检查（scripts/syntax-check.mjs）+ node --test
 ```
 
-三组自检，共 43 项：
+三组自检，共 49 项：
 
 - `test/client-selfcheck.mjs`（19 项）—— 模块加载器契约、只注册设置分区（且**不**
   注册左侧行）、`t` 由 `locale` 座位提供而非 `inject` 注入、双语文案键一致、样式表
   不含远程资源、`.lp-card` 只属于设置页而浮层用 `.lp-fly*`（类名冲突会让设置页的
   卡片变成浮层）、Host 侧路由注册与 `left-panel.json` 的真实读写（含损坏文件、
   并发写入、只发一半字段时的局部更新）。
-- `test/dom-pass.mjs`（19 项）—— 用真实 DOM 结构验证隐藏处理与集合模式：命中的行
+- `test/dom-pass.mjs`（25 项）—— 用真实 DOM 结构验证隐藏处理与集合模式，**两代行结构
+  各跑一遍**（0.1.x 的行按钮直挂 `<nav>`、0.2.x 的 `div.panelEntry` 包裹层）：命中的行
   被标记、未命中的不被标记、按 `order` 对齐、行数不一致时退化为名称匹配、名称不
-  一致时宁可不隐藏；集合行被注入到行列表首位且**不被当成面板行**、开启时全部折叠、
-  关闭时恢复且用户隐藏集合仍然生效、缺省配置视为开启、卡片挂在 `<body>` 上且初始
-  关闭、外壳的「更多」启动器随模式折叠/恢复、条目**逐行**铺进两列、折叠轨只留图标
-  并在有选中项时点一个角标、集合模式下观察器仍挂在 `body` 上。
+  一致时宁可不隐藏；0.2.x 下标记落在包裹层而不是内层按钮、「取消固定」按钮不算一行；
+  集合行被注入到行列表首位且**不被当成面板行**、开启时全部折叠、关闭时恢复且用户隐藏
+  集合仍然生效、缺省配置视为开启、集合模式下整块行列表被钉住而关闭即摘掉、卡片挂在
+  `<body>` 上且初始关闭、外壳的「更多」启动器随模式折叠/恢复、条目**逐行**铺进两列、
+  折叠轨只留图标并在有选中项时点一个角标、集合模式下观察器仍挂在 `body` 上、
+  重绘同时挂 `requestAnimationFrame` 与定时器（后台标签页里 rAF 不回调）。
 - `test/mock-integrity.mjs`（5 项）—— 钉住「原型只有一份」：全仓库只许
   `mock/collection-final.html` 与 `mock/index.html` 两个 html（多一个候选就是多一个能点错
   的完整页面）、索引页里的图与画板锚点都存在、三个画板条目数与徽标一致、键盘提示

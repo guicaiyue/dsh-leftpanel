@@ -18,9 +18,11 @@ node --test "test/*.mjs"                                  # 49 项自检
 容器里跑真机（本机 `~/Projects/dsh-docker`）：
 
 ```bash
-docker compose restart dsh          # 改 client/index 后都要重启
+docker compose restart dsh          # 只有改 index.js（host 半边）才需要
 ./dev-url.sh                        # 拿地址（cookie 失效时自动抓 token）
 ```
+
+只改 `client/client.js` 时刷新页面就是新版（原因见下面「部署」里的重启边界），不用重启容器。
 
 ## 五条硬约束
 
@@ -41,13 +43,18 @@ docker compose restart dsh          # 改 client/index 后都要重启
    标记打在最外层盒子上，`aria-haspopup="menu"` 用来把外壳的「更多」启动器排除在面板投影外。
    `test/dom-pass.mjs` 对两代结构各跑一遍。
 
-## 集合模式的两条实现要点
+## 集合模式的三条实现要点
 
 - **「更多」的条目不是写死的**：`harvestMoreEntries()` 把外壳真实菜单开一次、读
   `[role=menuitem]`、再关掉（期间给 `<html>` 挂 `data-dsh-leftpanel-harvest` 让菜单透明）。
   所以别的插件往 `sidebar.panellist.actions` 加东西会自动跟上来。
 - **条目逐行铺两列**（`splitColumns` 用 `index % 2`），不是列优先。列优先会让「更多」的
   两项一起落进右列、上下叠着，看起来仍像一个独立分组。
+- **固定打在行列表上，不在行上**：面板行全折进卡片后 `<nav>` 的高度就等于集合行，所以
+  `mountCollection()` 给 `<nav>` 挂 `data-dsh-leftpanel-pinned`（`position:sticky;top:0` +
+  不透明背景 + 补上外壳 8px 下边距的同色 shadow），`unmountCollection()` 摘掉。
+  **如果以后不再折叠全部面板行**（例如留了常驻行），必须改成给集合行单独准备 sticky 宿主，
+  否则常驻行会被一起吸住。
 
 ## 部署
 
@@ -79,8 +86,9 @@ NAS 访问 GitHub **走 mihomo 代理、不是直连**（现在装的是 npm 包
 （`curl -H "Authorization: Bearer <secret>" http://127.0.0.1:9090/proxies`，secret 在
 `/root/.clashctl/data/runtime.yaml`）→ `journalctl | grep -c 'failed to create session'`。
 
-装完必须重启：宿主 `systemctl --user restart dsh`，NAS `systemctl restart dsh`。
-验证不看浏览器（无头 Chrome 处理不了 303 + HttpOnly cookie），直接问接口：
+装完要不要重启看改的是哪半边（见上）：host 半边变了 → 宿主 `systemctl --user restart dsh`、
+NAS `systemctl restart dsh`；只改 client → 刷新页面即可。验证先问接口：
+
 
 ```bash
 curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state

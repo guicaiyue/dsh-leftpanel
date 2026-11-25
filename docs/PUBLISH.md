@@ -13,7 +13,7 @@
 | 包名 | `@xirizhi/dsh-leftpanel` |
 | 发布账号 | npm 用户 `xirizhi` |
 | token | `~/.npmrc` 里那条 `//registry.npmjs.org/:_authToken=...`（granular，`bypass_2fa=true`） |
-| 已发布版本 | 见 <https://www.npmjs.com/package/@xirizhi/dsh-leftpanel>（最近两次：0.1.2 修 DSH 0.2.x 行结构，0.1.3 修重绘调度） |
+| 已发布版本 | 见 <https://www.npmjs.com/package/@xirizhi/dsh-leftpanel>（最近三次：0.1.2 修 DSH 0.2.x 行结构，0.1.3 修重绘调度，0.1.4 固定集合行） |
 
 **为什么改名。** 原作者的包是 `@zhujiuyi/dsh-leftpanel`（0.1.0，2026-10 发布），
 那个 scope 只有原作者能发。本仓库用不带 scope 的 `@xirizhi/dsh-leftpanel`，与同系列插件
