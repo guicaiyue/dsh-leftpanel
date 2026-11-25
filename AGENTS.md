@@ -55,9 +55,9 @@ docker compose restart dsh          # 改 client/index 后都要重启
 
 | 机器 | profile | 依赖写法（实测值） |
 | --- | --- | --- |
-| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.3`（2026-11-25 从 GitHub URL 改成 npm） |
+| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.4`（2026-11-25 从 GitHub URL 改成 npm） |
 | NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.1`（走 npm，**未升**：仍是 0.1.1） |
-| dsh-dev 容器（`127.0.0.1:3080`） | `/data/dsh/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.3`（验证环境） |
+| dsh-dev 容器（`127.0.0.1:3080`） | `/data/dsh/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.4`（验证环境） |
 
 写 `latest` 的地址也只在**再次 `dsh plugin add` 时**才会动：pnpm 把当时解析到的 URL 和 integrity 钉进 lock，
 升级永远是一次显式 add + 重启，不会自己跟。
@@ -89,8 +89,11 @@ curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
 ## 现状
 
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
-- npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.3，2026-11-25 发布），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
-  宿主与 dsh-dev 容器装 0.1.3、NAS 仍是 0.1.1（见上「部署」），原作者的包已经从两个 profile 卸掉。
+- npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.4，2026-11-25 发布），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
+  宿主与 dsh-dev 容器装 0.1.4、NAS 仍是 0.1.1（见上「部署」），原作者的包已经从两个 profile 卸掉。
+- 0.1.4 把集合行固定在侧栏滚动区顶部：面板行全折进卡片后 `<nav>` 的高度就是集合行本身，
+  所以固定打在 `<nav>` 上（`data-dsh-leftpanel-pinned` → `position:sticky` + 不透明背景 +
+  补上外壳 8px 下边距的同色 shadow），会话列表从它下面滚过去；属性只在集合模式里挂，关掉即摘。
 - 0.1.2 修的是「集合模式刷新后左栏还原」：DSH 0.2.x 把面板行包进 `<div class="…panelEntry">`，
   旧代码只认 `<nav>` 下 `tagName === 'BUTTON'` 的直接子节点，升到 0.2.2-rc.5 后一行都匹配不到。
   0.1.3 补的是重绘调度：`requestAnimationFrame` 在后台标签页/不出帧的窗口里不回调，晚注册的面板行
