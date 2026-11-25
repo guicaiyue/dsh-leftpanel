@@ -80,15 +80,13 @@ docker compose restart dsh          # 只有改 index.js（host 半边）才需�
 `dsh.profile.bundles` 已有该包，所以绕过 `dsh plugin` 也照常加载）。刚发布那几分钟 tarball 还可能
 404（元数据先到、边缘缓存后到），重试即可，别当成发布失败。
 
-NAS 访问 GitHub **走 mihomo 代理、不是直连**（现在装的是 npm 包，下面这段是以后要从 GitHub URL 装时的排查顺序），节点抖动时 `pnpm add <url>` 会报
-`TimeoutError`。一次失败先复现（`curl -sI` 或 `node fetch` 看 HTTP 状态）再下结论，别换绕路
-方案；反复失败按这个顺序查：`/dev/tcp/github.com/443` → HTTP 状态 → 代理节点健康
-（`curl -H "Authorization: Bearer <secret>" http://127.0.0.1:9090/proxies`，secret 在
-`/root/.clashctl/data/runtime.yaml`）→ `journalctl | grep -c 'failed to create session'`。
+NAS 从 GitHub URL 装时**走 mihomo 代理、不是直连**，节点抖动会让 `pnpm add <url>` 报 `TimeoutError`。
+一次失败先复现（`curl -sI` 或 `node fetch` 看状态）再下结论，别换绕路方案；反复失败按
+`/dev/tcp/github.com/443` → HTTP 状态 → 代理节点健康（`curl -H "Authorization: Bearer <secret>"
+http://127.0.0.1:9090/proxies`，secret 在 `/root/.clashctl/data/runtime.yaml`）→
+`journalctl | grep -c 'failed to create session'` 的顺序查。
 
-装完要不要重启看改的是哪半边（见上）：host 半边变了 → 宿主 `systemctl --user restart dsh`、
-NAS `systemctl restart dsh`；只改 client → 刷新页面即可。验证先问接口：
-
+生效验证先问接口，不看页面（无头 Chrome 处理不了 303 + HttpOnly cookie）：
 
 ```bash
 curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
@@ -99,14 +97,10 @@ curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
 - npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.4，2026-11-25 发布），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
   宿主与 dsh-dev 容器装 0.1.4、NAS 仍是 0.1.1（见上「部署」），原作者的包已经从两个 profile 卸掉。
-- 0.1.4 把集合行固定在侧栏滚动区顶部：面板行全折进卡片后 `<nav>` 的高度就是集合行本身，
-  所以固定打在 `<nav>` 上（`data-dsh-leftpanel-pinned` → `position:sticky` + 不透明背景 +
-  补上外壳 8px 下边距的同色 shadow），会话列表从它下面滚过去；属性只在集合模式里挂，关掉即摘。
-- 0.1.2 修的是「集合模式刷新后左栏还原」：DSH 0.2.x 把面板行包进 `<div class="…panelEntry">`，
-  旧代码只认 `<nav>` 下 `tagName === 'BUTTON'` 的直接子节点，升到 0.2.2-rc.5 后一行都匹配不到。
-  0.1.3 补的是重绘调度：`requestAnimationFrame` 在后台标签页/不出帧的窗口里不回调，晚注册的面板行
-  会一直露着，现在 rAF 与 32ms 定时器同时挂。
-  不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
+- 2026-11-25 三连发，起因是「集合模式开启后刷新，左栏又还原」：0.1.2 认 0.2.x 的包裹式面板行
+  （见硬约束 5）、0.1.3 让重绘不再只挂 `requestAnimationFrame`、0.1.4 把集合行钉在滚动区顶部
+  （见「三条实现要点」）。自检 43 → 49 项。
+- 不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
 - 发版：推 `v*` 标签 → `.github/workflows/release.yml`（质量门 → Release + 稳定别名
   `dsh-leftpanel.tgz` → 有 `NPM_TOKEN` 就发 npm）。细节见 `docs/PUBLISH.md`。
 - 插件市场：`docs/market/guicaiyue__dsh-leftpanel.yml` + `scripts/market-submit.sh`（幂等）。
