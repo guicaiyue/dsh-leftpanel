@@ -207,13 +207,17 @@ window.__ModuleLoader__.load({
 			// Reading the real overflow menu means opening it; this keeps that
 			// read invisible instead of flashing a menu anchored to a hidden row.
 			'html[data-dsh-leftpanel-harvest] [role="menu"]{opacity:0 !important;pointer-events:none !important}',
-			'.lp-coll{display:flex;align-items:center;gap:6px;width:100%;min-height:36px;padding:7px 9px;border:0;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .15s ease}',
+			// Metrics copied from the shell's own row (`.panelRow` + the 3px
+			// `--dsh-sidebar-paint-inset` border its wrapper paints), so the injected
+			// row lines up with its neighbours in both markups: the row box is the
+			// wrapper in 0.2.x and the button in 0.1.x, and only the button is ours.
+			'.lp-coll{display:flex;align-items:center;gap:6px;box-sizing:border-box;width:100%;min-height:32px;padding:5px 9px;border:0;border-inline:3px solid transparent;border-radius:var(--dsw-radius-md,12px);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:14px;line-height:22px;text-align:left;cursor:pointer;transition:background-color .15s ease}',
 			'.lp-coll:hover,.lp-coll[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover)}',
 			'.lp-coll:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-alias-state-business-primary);outline-offset:-2px}',
 			'.lp-coll-glyph{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px}',
 			// Collapsed rail: the shell gives each row a 36px square, so the row
 			// keeps only its glyph and every text part steps out of the way.
-			'.lp-coll[data-collapsed="true"]{width:36px;justify-content:center;padding:0;gap:0}',
+			'.lp-coll[data-collapsed="true"]{width:36px;justify-content:center;padding:0;gap:0;border-inline:0}',
 			'.lp-coll[data-collapsed="true"] .lp-coll-label,'
 			+ '.lp-coll[data-collapsed="true"] .lp-coll-badge,'
 			+ '.lp-coll[data-collapsed="true"] .lp-coll-slash,'
@@ -488,28 +492,66 @@ window.__ModuleLoader__.load({
 
 				// ── DOM pass ──────────────────────────────────────────────────
 				/**
-				 * Find the sidebar's row list: the `<nav>` that holds the panel
-				 * buttons. It is identified structurally — a `nav` whose direct
-				 * children are the buttons carrying `aria-current`/glyph spans — so no
-				 * hashed class name, locale string or plugin-owned anchor is depended
-				 * on.
+				 * The shell's panel rows, in DOM order.
+				 *
+				 * The row *button* is the only element that carries the accessible
+				 * name, so that is what gets matched against the projection. The
+				 * element that must carry the hide mark is the outermost box the
+				 * shell lays out for the row, and that box moved between DSH
+				 * versions:
+				 *
+				 *   - 0.2.x wraps the row —
+				 *     `<div class="…panelEntry"><button class="…panelRow"
+				 *     aria-label="…">glyph + title</button><button class="…panelUnpin"
+				 *     aria-label="…">…</button></div>`. Hiding the inner button would
+				 *     leave the wrapper's box and the unpin button on screen, so the
+				 *     wrapper is the row.
+				 *   - 0.1.x rendered the row button directly under the `<nav>`; there
+				 *     the button is its own row.
+				 *
+				 * Both shapes are read here so the pass keeps working across an
+				 * upgrade. The shell's overflow launcher ("更多") has the same wrapper
+				 * shape and is named too, so it is listed as well and flagged:
+				 * callers that project *panel* entries skip it.
+				 * @param {any} rowList
+				 * @returns {{ el: any, button: any, launcher: boolean, name: string }[]}
+				 */
+				function rowEntries(rowList) {
+					/** @type {{ el: any, button: any, launcher: boolean, name: string }[]} */
+					const entries = []
+					for (const node of [...rowList.children]) {
+						if (node === null || node === undefined || typeof node.tagName !== 'string') continue
+						const button = node.tagName === 'BUTTON' ? node : (node.firstElementChild ?? null)
+						if (button === null || button === undefined || button.tagName !== 'BUTTON') continue
+						// Our own injected row is row-shaped too; it must never be read
+						// back as a panel entry, or it would list itself in the card.
+						if (button.getAttribute(COLLECTION_ATTR) !== null) continue
+						entries.push({
+							el: node,
+							button,
+							// The overflow launcher opens a menu; a panel row never does.
+							launcher: button.getAttribute('aria-haspopup') === 'menu',
+							name: button.getAttribute('aria-label') ?? '',
+						})
+					}
+					return entries
+				}
+
+				/**
+				 * Find the sidebar's row list: the `<nav>` that holds the panel rows.
+				 * It is identified structurally — a `nav` whose direct children are
+				 * rows, every one of them carrying an accessible name — so no hashed
+				 * class name, locale string or plugin-owned anchor is depended on.
 				 * @returns {Element | null}
 				 */
 				function findRowList() {
 					if (typeof document === 'undefined') return null
-					/** @type {Element[]} */
-					const candidates = [...document.querySelectorAll('nav')]
-					for (const nav of candidates) {
-						// Our own injected row is a button too; it must not decide
-						// whether this nav is the panel list.
-						const buttons = [...nav.children].filter(
-							(node) => node.tagName === 'BUTTON' && node.getAttribute(COLLECTION_ATTR) === null,
-						)
-						if (buttons.length === 0) continue
-						// A panel row is a button with an accessible name; the workspaces
+					for (const nav of [...document.querySelectorAll('nav')]) {
+						const entries = rowEntries(nav)
+						if (entries.length === 0) continue
+						// A panel row is a row with an accessible name; the workspaces
 						// and footer seats are lists of a different shape.
-						const named = buttons.filter((node) => (node.getAttribute('aria-label') ?? '') !== '')
-						if (named.length === buttons.length) return nav
+						if (entries.every((entry) => entry.name !== '')) return nav
 					}
 					return null
 				}
@@ -527,26 +569,24 @@ window.__ModuleLoader__.load({
 					const rowList = findRowList()
 					if (rowList === null) return
 
-					const rows = [...rowList.children].filter(
-						(node) => node.tagName === 'BUTTON' && !node.hasAttribute?.(COLLECTION_ATTR) && node.getAttribute(COLLECTION_ATTR) === null,
-					)
+					// The launcher is a row of the list but not a panel entry: it must
+					// neither shift the positional match nor be hidden by it.
+					const entries = rowEntries(rowList).filter((entry) => !entry.launcher)
 					const hiddenSet = new Set(ids)
-					const positional = rows.length === list.length
-					for (let index = 0; index < rows.length; index += 1) {
-						const row = rows[index]
+					const positional = entries.length === list.length
+					for (let index = 0; index < entries.length; index += 1) {
+						const { el, name } = entries[index]
 						const panel = positional ? list[index] : undefined
 						let hide = false
 						if (panel !== undefined) {
 							hide = hiddenSet.has(panel.id)
-							const name = row.getAttribute('aria-label')
 							// A positional hit whose accessible name disagrees is not trusted.
-							if (hide && name !== null && name !== panel.label) hide = false
+							if (hide && name !== '' && name !== panel.label) hide = false
 						} else {
-							const name = row.getAttribute('aria-label')
-							hide = name !== null && list.some((item) => item.label === name && hiddenSet.has(item.id))
+							hide = name !== '' && list.some((item) => item.label === name && hiddenSet.has(item.id))
 						}
-						if (hide) row.setAttribute(HIDE_ATTR, '')
-						else row.removeAttribute(HIDE_ATTR)
+						if (hide) el.setAttribute(HIDE_ATTR, '')
+						else el.removeAttribute(HIDE_ATTR)
 					}
 				}
 
@@ -582,23 +622,20 @@ window.__ModuleLoader__.load({
 				function readRowModel() {
 					const rowList = findRowList()
 					if (rowList === null) return null
-					// The injected collection row is a button too; it must never be
-					// read back as a panel entry, or it would list itself.
-					const rows = [...rowList.children].filter(
-						(node) => node.tagName === 'BUTTON' && node.getAttribute(COLLECTION_ATTR) === null,
-					)
+					// `rowEntries` already excluded the injected collection row; the
+					// shell's overflow launcher is a row of the list but not a panel.
+					const entries = rowEntries(rowList).filter((entry) => !entry.launcher)
 					const byLabel = new Map(panels.map((panel) => [panel.label, panel.id]))
-					const items = rows.map((row) => {
-						const label = row.getAttribute('aria-label') ?? ''
-						const glyph = row.firstElementChild
+					const items = entries.map(({ el, button, name }) => {
+						const glyph = button.firstElementChild
 						return {
-							id: byLabel.get(label) ?? label,
-							label,
+							id: byLabel.get(name) ?? name,
+							label: name,
 							glyph: glyph === null || glyph === undefined ? null : glyph.innerHTML,
-							hidden: row.getAttribute(HIDE_ATTR) !== null,
+							hidden: el.getAttribute(HIDE_ATTR) !== null,
 						}
 					})
-					return { rowList, rows, items }
+					return { rowList, rows: entries.map((entry) => entry.button), items }
 				}
 
 				/** Resolve the entry the row's slash should show. */
@@ -659,20 +696,17 @@ window.__ModuleLoader__.load({
 				/**
 				 * The shell's own overflow launcher ("更多").
 				 *
-				 * It is a `<span>` wrapper holding a panel-row button; the wrapper is
-				 * what gets hidden, because the button inside is what React owns.
+				 * It is a wrapper element holding a panel-row button whose
+				 * `aria-haspopup` is `menu`; the wrapper is what gets hidden, because
+				 * the button inside is what React owns.
 				 * @returns {{ wrapper: any, button: any } | null}
 				 */
 				function findMoreLauncher() {
 					const rowList = findRowList()
 					if (rowList === null) return null
-					for (const node of [...rowList.children]) {
-						if (node.tagName === 'BUTTON') continue
-						const button = node.querySelector?.('button')
-						if (button === null || button === undefined) continue
-						return { wrapper: node, button }
-					}
-					return null
+					const launcher = rowEntries(rowList).find((entry) => entry.launcher)
+					if (launcher === undefined) return null
+					return { wrapper: launcher.el, button: launcher.button }
 				}
 
 				/** Wait one paint, so a menu React just opened is in the DOM. */

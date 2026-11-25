@@ -12,7 +12,7 @@ DSH 插件 `@xirizhi/dsh-leftpanel`：把左侧菜单的面板入口收进一行
 
 ```bash
 node --check index.js && node --check client/client.js   # 语法
-node --test "test/*.mjs"                                  # 43 项自检
+node --test "test/*.mjs"                                  # 47 项自检
 ```
 
 容器里跑真机（本机 `~/Projects/dsh-docker`）：
@@ -22,17 +22,24 @@ docker compose restart dsh          # 改 client/index 后都要重启
 ./dev-url.sh                        # 拿地址（cookie 失效时自动抓 token）
 ```
 
-## 四条硬约束
+## 五条硬约束
 
 1. **注入 DOM 的类名必须避开宿主和本插件设置页已用的名字。** 设置页自己有 `.lp-card`，
    侧栏浮层只能用 `.lp-fly*`。历史上把浮层也叫 `.lp-card`，那条 `position:fixed` 落到
    设置页的两张卡片上，整页叠成一团。`test/client-selfcheck.mjs` 钉着这条。
-2. **注入的行必须在 `buildRow()` 时就带 `aria-label`。** 外壳靠「`nav` 下按钮都有可访问名」
+2. **注入的行必须在 `buildRow()` 时就带 `aria-label`。** 外壳靠「`nav` 下的行都有可访问名」
    认行列表；匿名行会让判据失效，行刚插进去就被自己拆掉。
-3. **注入的行必须从面板投影里排除**（`readRowModel` / `applyRowMarks` / `findRowList`），
+3. **注入的行必须从面板投影里排除**（`rowEntries` 里认 `data-dsh-leftpanel-collection`），
    否则它会把自己列进卡片。
 4. **降级必须是「什么都不隐藏」，不是「藏了回不去」。** 集合行挂载失败、溢出菜单读取
    失败，都要退回到「面板行照常显示 + 外壳的『更多』放回来」，不许留一个空壳。
+5. **别把「行」写死成 `<button>`。** DSH 0.1.x 的行按钮直挂 `<nav>`，0.2.x 把它包进
+   `<div class="…panelEntry">` 并加一个「取消固定」按钮。0.1.2 之前的代码只认
+   `tagName === 'BUTTON'` 的直接子节点，升到 0.2.2-rc.5 后一行都匹配不到 → `findRowList`
+   返回 null → 整条功能静默退化成「什么都不隐藏」，用户看到的就是「刷新后左栏还原」。
+   现在统一走 `rowEntries(rowList)`：取直接子节点、再取其第一个元素子节点做行按钮，
+   标记打在最外层盒子上，`aria-haspopup="menu"` 用来把外壳的「更多」启动器排除在面板投影外。
+   `test/dom-pass.mjs` 对两代结构各跑一遍。
 
 ## 集合模式的两条实现要点
 

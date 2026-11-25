@@ -141,20 +141,66 @@ class Element {
 }
 
 /**
- * Build the sidebar's row list. `labels` become the accessible names, exactly
- * as `PanelRow` sets `aria-label`.
+ * Build the sidebar's row list in the shape the running shell renders.
+ *
+ * DSH 0.2.x wraps each row — `<div class="…panelEntry"><button class="…panelRow"
+ * aria-label="…">…</button><button class="…panelUnpin" …></button></div>` — while
+ * 0.1.x rendered the row button directly under the `<nav>`. Both shapes are
+ * real (the NAS and the desktop have run different releases), so both are
+ * modelled here: `wrapped` picks 0.2.x, and `launcher` adds the shell's own
+ * "更多" overflow row.
  * @param {string[]} labels
+ * @param {{ wrapped?: boolean, launcher?: boolean }} [options]
  */
-function buildSidebar(labels) {
+function buildSidebar(labels, options = {}) {
   const nav = new Element('NAV')
   for (const label of labels) {
     const button = new Element('BUTTON')
     button.setAttribute('aria-label', label)
     const glyph = button.appendChild(new Element('SPAN'))
     glyph.appendChild(new Element('SPAN'))
-    nav.appendChild(button)
+    if (options.wrapped !== true) {
+      nav.appendChild(button)
+      continue
+    }
+    const wrapper = new Element('DIV')
+    wrapper.className = 'panelEntry'
+    wrapper.appendChild(button)
+    // The shell renders its pin toggle inside the same wrapper; it must never be
+    // mistaken for a row of its own.
+    const unpin = new Element('BUTTON')
+    unpin.setAttribute('aria-label', 'Unpin ' + label)
+    wrapper.appendChild(unpin)
+    nav.appendChild(wrapper)
+  }
+  if (options.launcher === true) {
+    const wrapper = new Element('SPAN')
+    wrapper.className = 'moreAnchor'
+    const button = new Element('BUTTON')
+    button.setAttribute('aria-label', 'More')
+    button.setAttribute('aria-haspopup', 'menu')
+    wrapper.appendChild(button)
+    nav.appendChild(wrapper)
   }
   return nav
+}
+
+/**
+ * Report every row of the list: the accessible name it carries and whether the
+ * box the shell lays out for it is marked hidden.
+ * @param {Element} nav
+ */
+function reportRows(nav) {
+  return [...nav.children]
+    .filter((node) => node.getAttribute(COLLECTION_ATTR) === null)
+    .map((node) => {
+      const button = node.tagName === 'BUTTON' ? node : node.firstElementChild
+      return {
+        label: button.getAttribute('aria-label'),
+        launcher: button.getAttribute('aria-haspopup') === 'menu',
+        hidden: node.hasAttribute(HIDE_ATTR),
+      }
+    })
 }
 
 /**
@@ -162,9 +208,10 @@ function buildSidebar(labels) {
  * @param {string[]} rowLabels the label each rendered row carries
  * @param {Array<{ id: string, label: string, order: number }>} entries the slot ledger
  * @param {string[]} hidden seeded through the localStorage mirror
+ * @param {{ wrapped?: boolean, launcher?: boolean }} [options] which shell markup to model
  */
-function runWith(rows, entries, hidden) {
-  const nav = buildSidebar(rows)
+function runWith(rows, entries, hidden, options = {}) {
+  const nav = buildSidebar(rows, options)
 
   const documentStub = {
     head: { appendChild: () => {} },
@@ -250,10 +297,8 @@ function runWith(rows, entries, hidden) {
   }).apply(ctx)
 
   return {
-    rows: nav.children.map((button) => ({
-      label: button.getAttribute('aria-label'),
-      hidden: button.hasAttribute(HIDE_ATTR),
-    })),
+    rows: reportRows(nav).filter((row) => !row.launcher).map(({ label, hidden }) => ({ label, hidden })),
+    nav,
   }
 }
 
@@ -394,7 +439,7 @@ function buildDocument(nav) {
 function runCollection(options = {}) {
   const rows = options.rows ?? ['Plugins', 'Schedules', 'Archify']
   const entries = options.entries ?? rows.map((label, index) => ({ id: label.toLowerCase(), label, order: index }))
-  const nav = options.nav ?? buildSidebar(rows)
+  const nav = options.nav ?? buildSidebar(rows, { wrapped: options.wrapped, launcher: options.launcher })
   const documentStub = buildDocument(nav)
   const collection = { enabled: options.enabled ?? true, selectedId: options.selectedId ?? null }
 
@@ -480,9 +525,8 @@ function runCollection(options = {}) {
     collectionRow,
     settled,
     card,
-    rows: nav.children
-      .filter((node) => node.getAttribute(COLLECTION_ATTR) === null && node.tagName === 'BUTTON')
-      .map((button) => ({ label: button.getAttribute('aria-label'), hidden: button.hasAttribute(HIDE_ATTR) })),
+    rows: reportRows(nav).filter((row) => !row.launcher).map(({ label, hidden }) => ({ label, hidden })),
+    allRows: reportRows(nav),
     mirror: sandbox.localStorage,
   }
 }
@@ -602,16 +646,88 @@ test('the card is mounted outside the sidebar and starts hidden', () => {
   assert.equal(run.card.parentElement, run.nav.ownerDocument?.body ?? run.card.parentElement)
 })
 
+// ── the shell's 0.2.x row markup ─────────────────────────────────────────
+// DSH 0.2.x wraps each row in `<div class="…panelEntry">` and renders the pin
+// toggle beside it. The pass must fold the wrapper — hiding only the inner
+// button leaves an empty box and the pin toggle on screen — and must never read
+// the pin toggle as a row of its own. This is the markup the desktop runs, so a
+// pass that only understood bare `<button>` rows silently degraded to "hide
+// nothing" and the left menu came back after every reload.
+
+test('the 0.2.x wrapper shape folds the row box, not just its button', () => {
+  const run = runWith(
+    ['Plugins', 'Token usage', 'Left menu'],
+    [
+      { id: 'plugins', label: 'Plugins', order: 0 },
+      { id: 'token-dashboard', label: 'Token usage', order: 5 },
+      { id: 'left-panel', label: 'Left menu', order: 7 },
+    ],
+    ['token-dashboard'],
+    { wrapped: true },
+  )
+  assert.deepEqual(run.rows, [
+    { label: 'Plugins', hidden: false },
+    { label: 'Token usage', hidden: true },
+    { label: 'Left menu', hidden: false },
+  ])
+  const marked = [...run.nav.children].filter((node) => node.hasAttribute(HIDE_ATTR))
+  assert.equal(marked.length, 1, 'exactly one row box is marked')
+  assert.equal(marked[0].tagName, 'DIV', 'the wrapper is the element that gets marked')
+  assert.equal(marked[0].firstElementChild.getAttribute('aria-label'), 'Token usage')
+  assert.equal(marked[0].firstElementChild.hasAttribute(HIDE_ATTR), false, 'the row button itself is left alone')
+})
+
+test('the 0.2.x pin toggle is never counted as a panel row', () => {
+  // Every wrapper holds the row button plus a pin toggle; a pass that matched
+  // *any* descendant button would see twice as many rows as the projection and
+  // decline to hide anything.
+  const run = runWith(
+    ['Plugins', 'Token usage'],
+    [
+      { id: 'plugins', label: 'Plugins', order: 0 },
+      { id: 'token-dashboard', label: 'Token usage', order: 5 },
+    ],
+    ['plugins'],
+    { wrapped: true },
+  )
+  assert.deepEqual(run.rows, [
+    { label: 'Plugins', hidden: true },
+    { label: 'Token usage', hidden: false },
+  ])
+})
+
+test('collection mode mounts and folds the 0.2.x markup', () => {
+  const run = runCollection({ wrapped: true, launcher: true })
+  assert.ok(run.collectionRow !== null, 'the collection row must be injected')
+  assert.equal(run.nav.children[0], run.collectionRow, 'and sit above the folded rows')
+  for (const row of run.rows) assert.equal(row.hidden, true, `${row.label} must fold away`)
+  const launcherRow = run.allRows.find((row) => row.launcher)
+  assert.ok(launcherRow !== undefined, 'the launcher is still a row of the list')
+  assert.equal(launcherRow.hidden, false, 'but it folds by its own attribute, not by the panel mark')
+  assert.equal(
+    run.nav.lastElementChild.getAttribute('data-dsh-leftpanel-more-hidden'),
+    '',
+    'the launcher wrapper is what gets folded',
+  )
+})
+
+test('the collection row is not read back as a panel entry in either markup', () => {
+  for (const wrapped of [false, true]) {
+    const run = runCollection({ wrapped, rows: ['Plugins'] })
+    assert.equal(run.rows.length, 1, `only the real panel row is listed (wrapped: ${wrapped})`)
+    assert.equal(run.rows[0].hidden, true, `and it folds (wrapped: ${wrapped})`)
+  }
+})
+
 // ── the shell's overflow ("更多") folds into the card's second layer ──────
 
 test('the overflow launcher is folded away and restored with the mode', async () => {
-  const nav = buildSidebar(['Plugins', 'Schedules'])
-  // The shell renders the launcher as a <span> wrapper around a panel-row button.
-  const launcher = new Element('SPAN')
-  const launcherButton = new Element('BUTTON')
-  launcherButton.setAttribute('aria-label', 'More')
-  launcher.appendChild(launcherButton)
-  nav.appendChild(launcher)
+  // The shell renders the launcher as a wrapper around a panel-row button whose
+  // `aria-haspopup` is `menu`; that attribute is how it is told apart from a
+  // panel row.
+  const nav = buildSidebar(['Plugins', 'Schedules'], { launcher: true })
+  const launcher = nav.lastElementChild
+  const launcherButton = launcher.firstElementChild
 
   const run = runCollection({ rows: ['Plugins', 'Schedules'], nav })
   assert.equal(launcher.getAttribute('data-dsh-leftpanel-more-hidden'), '', 'the launcher is hidden while folding')
@@ -622,12 +738,8 @@ test('the overflow launcher is folded away and restored with the mode', async ()
 })
 
 test('turning the mode off puts the overflow launcher back', () => {
-  const nav = buildSidebar(['Plugins'])
-  const launcher = new Element('SPAN')
-  const launcherButton = new Element('BUTTON')
-  launcherButton.setAttribute('aria-label', 'More')
-  launcher.appendChild(launcherButton)
-  nav.appendChild(launcher)
+  const nav = buildSidebar(['Plugins'], { launcher: true })
+  const launcher = nav.lastElementChild
   runCollection({ enabled: false, rows: ['Plugins'], nav })
   assert.equal(launcher.hasAttribute('data-dsh-leftpanel-more-hidden'), false, 'nothing stays folded')
 })
