@@ -55,11 +55,23 @@ docker compose restart dsh          # 改 client/index 后都要重启
 
 | 机器 | profile | 依赖写法（实测值） |
 | --- | --- | --- |
-| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `https://github.com/guicaiyue/dsh-leftpanel/releases/download/v0.1.1/dsh-leftpanel.tgz` |
-| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.1`（走 npm，sha512 与 Release 包相同） |
+| arch-desktop（宿主，13080） | `~/.dsh/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.3`（2026-11-25 从 GitHub URL 改成 npm） |
+| NAS（`xrznas`，13080） | `/vol1/1000/docker/dsh-npm/home/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.1`（走 npm，**未升**：仍是 0.1.1） |
+| dsh-dev 容器（`127.0.0.1:3080`） | `/data/dsh/profiles/web` | `@xirizhi/dsh-leftpanel@0.1.3`（验证环境） |
 
 写 `latest` 的地址也只在**再次 `dsh plugin add` 时**才会动：pnpm 把当时解析到的 URL 和 integrity 钉进 lock，
 升级永远是一次显式 add + 重启，不会自己跟。
+
+**改完 client 半边不必重启，改完 host 半边必须重启**（2026-11-25 实测）：前端入口清单按 profile 的
+`package.json` 现算、`plugins/??…client.js` 由 web 端按请求读磁盘，所以只改 `client/client.js` 的版本
+装完刷新页面就是新版（用「把 `collectionNav` 改成 `集合X` → 刷新即见」验证过，期间 `ActiveEnterTimestamp`
+没变）；`index.js` 的路由与状态存储在进程启动时加载，改它必须在 `systemctl --user restart dsh` 后才生效。
+
+**npm 安装要走 npmjs，不是默认镜像**：`dsh plugin add` 背后是 pnpm，默认 registry 是 npmmirror，
+刚发布的版本它还没有（`ERR_PNPM_NO_MATCHING_VERSION`）。要么等镜像同步，要么在 profile 里直接
+`pnpm add @xirizhi/dsh-leftpanel@<ver> --registry=https://registry.npmjs.org`（`package.json` 的
+`dsh.profile.bundles` 已有该包，所以绕过 `dsh plugin` 也照常加载）。刚发布那几分钟 tarball 还可能
+404（元数据先到、边缘缓存后到），重试即可，别当成发布失败。
 
 NAS 访问 GitHub **走 mihomo 代理、不是直连**（现在装的是 npm 包，下面这段是以后要从 GitHub URL 装时的排查顺序），节点抖动时 `pnpm add <url>` 会报
 `TimeoutError`。一次失败先复现（`curl -sI` 或 `node fetch` 看 HTTP 状态）再下结论，别换绕路
@@ -77,8 +89,12 @@ curl -s -b <cookie> http://127.0.0.1:13080/api/left-panel/state
 ## 现状
 
 - `main` 与 `origin/main` 同步；`origin` 是自己的 fork，`upstream` 是原作者仓库。
-- npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.1），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
-  两台机器装的都是 0.1.1，但宿主是 Release 构建物、NAS 是 npm 包（见上「部署」），原作者的包已经从两个 profile 卸掉。
+- npm 包是 **`@xirizhi/dsh-leftpanel`**（现役 0.1.3，2026-11-25 发布），不是原作者的 `@zhujiuyi/dsh-leftpanel`。
+  宿主与 dsh-dev 容器装 0.1.3、NAS 仍是 0.1.1（见上「部署」），原作者的包已经从两个 profile 卸掉。
+- 0.1.2 修的是「集合模式刷新后左栏还原」：DSH 0.2.x 把面板行包进 `<div class="…panelEntry">`，
+  旧代码只认 `<nav>` 下 `tagName === 'BUTTON'` 的直接子节点，升到 0.2.2-rc.5 后一行都匹配不到。
+  0.1.3 补的是重绘调度：`requestAnimationFrame` 在后台标签页/不出帧的窗口里不回调，晚注册的面板行
+  会一直露着，现在 rAF 与 32ms 定时器同时挂。
   不带 scope 的 `dsh-leftpanel` 被 npm 以「与 `dsh-left-panel` 太像」403 拒绝过。
 - 发版：推 `v*` 标签 → `.github/workflows/release.yml`（质量门 → Release + 稳定别名
   `dsh-leftpanel.tgz` → 有 `NPM_TOKEN` 就发 npm）。细节见 `docs/PUBLISH.md`。

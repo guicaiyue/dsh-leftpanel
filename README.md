@@ -57,12 +57,22 @@ dsh-docker 容器（那台只装了 3 个面板插件，所以徽标 3、卡片 
 ## 安装
 
 ```bash
-# 直接用 GitHub Release 上的构建物（推荐，不经过 npm）
-dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
-
-# 或从 npm
+# 从 npm 装（推荐：升级就是换个版本号，pnpm 自己管 integrity）
 dsh plugin --profile web add @xirizhi/dsh-leftpanel
+
+# 或直接拿 GitHub Release 上的构建物（不经过 npm）
+dsh plugin --profile web add https://github.com/guicaiyue/dsh-leftpanel/releases/latest/download/dsh-leftpanel.tgz
 ```
+
+**装完要不要重启**：只有 `client/client.js` 变的版本（0.1.2、0.1.3 都是）装完**刷新页面**就是新版，
+不用动 dsh；`index.js`（Host：`/api/left-panel/state` 路由与状态文件）变了则必须
+`systemctl --user restart dsh`，那段代码在进程启动时加载。
+
+**npm 装不到刚发布的版本**：`dsh plugin add` 背后是 pnpm，默认 registry 是 npmmirror，它比 npmjs
+慢半拍。要么等镜像同步，要么在 profile 目录里直接
+`pnpm add @xirizhi/dsh-leftpanel@<版本> --registry=https://registry.npmjs.org`
+（`dsh.profile.bundles` 里已有这个包，绕过 `dsh plugin` 也一样加载）。发布后头几分钟 tarball 还可能
+404——元数据先到、边缘缓存后到，重试即可。
 
 已在 [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) 收录（2026-11-24 合并，PR #18149），
 装了 `dshmarket` 的机器也可以直接在插件市场里装。Release 的 `dsh-leftpanel.tgz` 与 npm 上同名版本内容相同
